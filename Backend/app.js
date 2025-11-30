@@ -15,7 +15,7 @@ import gradeRoute from './Routes/grade.route.js';
 import announcementRoute from './Routes/announcement.route.js';
 import assignmentRoute from './Routes/assignment.route.js';
 import peopleRoute from './Routes/people.route.js';
-import errorHandler from './middlewares/errorHandler.js';
+import errorHandler from './Middlewares/errorHandler.js';
 dotenv.config();
 
 const app = express();
