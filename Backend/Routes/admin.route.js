@@ -9,8 +9,8 @@ import {
     getStudentById,
     deleteStudent
 } from '../Controllers/admin.controller.js';
-import { isAuthenticated } from '../Middlewares/auth.middleware.js';
-import { isAdmin } from '../Middlewares/admin.middleware.js';
+import { isAuthenticated } from '../middlewares/auth.middleware.js'; // already correct, no change needed
+import { isAdmin } from '../middlewares/admin.middleware.js';
 
 const router = express.Router();
 

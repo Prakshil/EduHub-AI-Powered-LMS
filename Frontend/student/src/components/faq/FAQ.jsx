@@ -6,14 +6,14 @@ const FAQ = () => {
 
   const faqs = [
     {
-      question: "How secure is student data on StudentMS?",
+      question: "How secure is student data on EduHub?",
       answer:
         "We use bank-level 256-bit AES encryption for all data at rest and in transit. Our platform is GDPR and FERPA compliant, with regular security audits and penetration testing. All data is backed up daily with 99.9% uptime guarantee.",
     },
     {
-      question: "Can StudentMS integrate with our existing systems?",
+      question: "Can EduHub integrate with our existing systems?",
       answer:
-        "Yes! StudentMS offers seamless integration with popular educational platforms including Google Classroom, Microsoft Teams, Canvas, and Moodle. We also provide REST APIs and webhooks for custom integrations.",
+        "Yes! EduHub offers seamless integration with popular educational platforms including Google Classroom, Microsoft Teams, Canvas, and Moodle. We also provide REST APIs and webhooks for custom integrations.",
     },
     {
       question: "What kind of support do you offer?",
@@ -23,7 +23,7 @@ const FAQ = () => {
     {
       question: "Is there a mobile app available?",
       answer:
-        "Yes! StudentMS has native mobile apps for both iOS and Android. Students, teachers, and parents can access all features on-the-go with offline mode support for critical functions.",
+        "Yes! EduHub has native mobile apps for both iOS and Android. Students, teachers, and parents can access all features on-the-go with offline mode support for critical functions.",
     },
     {
       question: "How long does implementation take?",
@@ -51,7 +51,7 @@ const FAQ = () => {
             Frequently Asked Questions
           </h2>
           <p className="text-neutral-400 text-lg">
-            Everything you need to know about StudentMS
+            Everything you need to know about EduHub
           </p>
         </motion.div>
 
@@ -78,7 +78,7 @@ const FAQ = () => {
                   className="flex-shrink-0"
                 >
                   <svg
-                    className="w-6 h-6 text-purple-500"
+                    className="w-6 h-6 text-white"
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor"
@@ -86,7 +86,7 @@ const FAQ = () => {
                     <path
                       strokeLinecap="round"
                       strokeLinejoin="round"
-                      strokeWidth={2}
+                      strokeWidth={2.5}
                       d="M19 9l-7 7-7-7"
                     />
                   </svg>
@@ -101,7 +101,7 @@ const FAQ = () => {
                     transition={{ duration: 0.3 }}
                     className="overflow-hidden"
                   >
-                    <div className="px-6 pb-5 text-neutral-400 leading-relaxed">
+                    <div className="px-6 pb-5 text-black leading-relaxed">
                       {faq.answer}
                     </div>
                   </motion.div>
@@ -119,8 +119,8 @@ const FAQ = () => {
           viewport={{ once: true }}
           className="mt-16 text-center"
         >
-          <div className="bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-pink-500/10 border border-purple-500/20 rounded-2xl p-8">
-            <h3 className="text-2xl font-bold text-white mb-4">
+          <div className="bg-gradient-to-r from-blue-200 via-purple-200 to-pink-200 border border-purple-500/20 rounded-2xl p-8">
+            <h3 className="text-2xl font-bold text-purple-700 mb-4">
               Still have questions?
             </h3>
             <p className="text-neutral-400 mb-6">

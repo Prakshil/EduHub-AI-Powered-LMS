@@ -1,4 +1,5 @@
 import User from "../Models/user.model.js";
+import Semester from "../Models/Semester.model.js";
 import ApiError from "../utils/ApiError.js";
 import ApiResponse from "../utils/ApiResponse.js";
 import bcrypt from 'bcrypt';
@@ -26,9 +27,80 @@ async function validateEmail(email) {
 }
 
 
+const clampSemesterNumber = (value) => {
+  if (!Number.isFinite(value)) return 1;
+  return Math.min(Math.max(Math.round(value), 1), 12);
+};
+
+const extractSemesterNumber = (semesterDoc) => {
+  if (!semesterDoc) return 1;
+  if (semesterDoc.sequence) {
+    return clampSemesterNumber(semesterDoc.sequence);
+  }
+  if (semesterDoc.name) {
+    const numeric = parseInt(semesterDoc.name.replace(/[^0-9]/g, ''), 10);
+    if (!Number.isNaN(numeric)) {
+      return clampSemesterNumber(numeric);
+    }
+  }
+  const termOrder = { Spring: 1, Summer: 2, Fall: 3, Winter: 4 };
+  if (semesterDoc.term && termOrder[semesterDoc.term]) {
+    return termOrder[semesterDoc.term];
+  }
+  return 1;
+};
+
+const parseSkillsInput = (raw) => {
+  if (!raw) return [];
+
+  const toArray = (value) => {
+    if (Array.isArray(value)) return value;
+    if (typeof value === 'string') {
+      try {
+        const parsed = JSON.parse(value);
+        if (parsed !== value) {
+          return toArray(parsed);
+        }
+      } catch {
+        // ignore JSON parse errors and fall back to splitting
+      }
+      return value.split(',');
+    }
+    return [];
+  };
+
+  return toArray(raw)
+    .map((item) => {
+      if (!item) return '';
+      return String(item)
+        .replace(/\\+"/g, '"')
+        .replace(/^"+|"+$/g, '')
+        .trim();
+    })
+    .filter(Boolean);
+};
+
+const buildStudentProfile = async (semesterId) => {
+  let semesterDoc = null;
+  if (semesterId) {
+    try {
+      semesterDoc = await Semester.findById(semesterId);
+    } catch (error) {
+      console.warn('Invalid semester id supplied during signup:', error.message);
+    }
+  }
+
+  return {
+    currentSemester: clampSemesterNumber(extractSemesterNumber(semesterDoc)),
+    semesterId: semesterDoc?._id,
+    semesterName: semesterDoc?.name,
+    admissionDate: new Date(),
+  };
+};
+
 const signUp = async (req, res) => {
   try {
-    const { username, email, password, phone, dob, age, gender, address, skills, profileimage } = req.body;
+    const { username, email, password, phone, dob, age, gender, address, skills, profileimage, role, semester } = req.body;
     const normalizedGender = typeof gender === "string" ? gender.trim().toLowerCase() : gender;
     const emailregex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/i;
     if (!emailregex.test(email)) {
@@ -60,13 +132,24 @@ const signUp = async (req, res) => {
             username,
             email,
             password: req.body.password, // already hashed above
-            phone,
+            phone: phone ? String(phone) : undefined,
             dob,
             age,
             gender: normalizedGender,
             address,
-            skills,
+            skills: parseSkillsInput(skills),
         };
+        
+        // Set role if provided (only allow 'user' or 'teacher' from signup)
+        if (role && ['user', 'teacher'].includes(role)) {
+            userDoc.role = role;
+        }
+        
+        // If student (user role) prepare student profile
+        if (!role || role === 'user') {
+            userDoc.studentProfile = await buildStudentProfile(semester);
+        }
+        
         if (profileImg) userDoc.profileimage = profileImg; // only set when provided, otherwise let mongoose default apply
 
         const user = new User(userDoc);
@@ -162,6 +245,24 @@ const updateUser = async (req, res) => {
                     } finally {
                         try { if (req.file?.path) fs.unlinkSync(req.file.path); } catch {}
                     }
+                }
+
+                if (req.body.skills) {
+                    req.body.skills = parseSkillsInput(req.body.skills);
+                }
+
+                if (req.body.studentProfile && typeof req.body.studentProfile === 'string') {
+                    try {
+                        req.body.studentProfile = JSON.parse(req.body.studentProfile);
+                    } catch {
+                        // ignore invalid JSON
+                    }
+                }
+
+                if (req.body.studentProfile?.currentSemester) {
+                    req.body.studentProfile.currentSemester = clampSemesterNumber(
+                        parseInt(req.body.studentProfile.currentSemester, 10)
+                    );
                 }
 
                 const user = await User.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });

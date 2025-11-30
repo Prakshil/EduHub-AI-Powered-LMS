@@ -6,7 +6,16 @@ import ConnectDB from './Config/dbConnect.js';
 import studentRoute from './Routes/student.route.js';
 import userRoute from './Routes/user.route.js';
 import adminRoute from './Routes/admin.route.js';
-import errorHandler from './Middlewares/errorHandler.js';
+import subjectRoute from './Routes/subject.route.js';
+import examRoute from './Routes/exam.route.js';
+import semesterRoute from './Routes/semester.route.js';
+import courseRoute from './Routes/course.route.js';
+import enrollmentRoute from './Routes/enrollment.route.js';
+import gradeRoute from './Routes/grade.route.js';
+import announcementRoute from './Routes/announcement.route.js';
+import assignmentRoute from './Routes/assignment.route.js';
+import peopleRoute from './Routes/people.route.js';
+import errorHandler from './middlewares/errorHandler.js';
 dotenv.config();
 
 const app = express();
@@ -69,6 +78,21 @@ app.use('/api/v1/admin', adminRoute);
 // https://localhost:5000/api/v1/admin/users
 // https://localhost:5000/api/v1/admin/users/:id
 
+// Academic Management Routes
+app.use('/api/v1/subjects', subjectRoute);
+app.use('/api/v1/semesters', semesterRoute);
+app.use('/api/v1/courses', courseRoute);
+app.use('/api/v1/enrollments', enrollmentRoute);
+app.use('/api/v1/grades', gradeRoute);
+app.use('/api/v1/people', peopleRoute);
+
+// Exam Generation Route
+app.use('/api/v1/exam', examRoute);
+
+// Communication Routes
+app.use('/api/v1/announcements', announcementRoute);
+app.use('/api/v1/assignments', assignmentRoute);
+
 // Global error handler should be the last middleware
 app.use(errorHandler);
 
@@ -76,11 +100,15 @@ app.use(errorHandler);
 ConnectDB()
     .then(() => {
         console.log(`Database ${process.env.DB_NAME} connected successfully`);
-        // Start the server or perform other actions
-        app.listen(PORT, () => {
-            console.log(`server is listening on http://${HOSTNAME}:${PORT}`);
+        // Start the server
+        app.listen(PORT, HOSTNAME, () => {
+            console.log(`✅ Server is listening on http://${HOSTNAME}:${PORT}`);
+            console.log(`📡 API endpoints available at http://${HOSTNAME}:${PORT}/api/v1`);
         });
     })
     .catch((error) => {
-        console.error("Database connection failed:", error);
+        console.error("❌ Database connection failed:", error);
+        console.error("⚠️  Server will not start without database connection.");
+        console.error("💡 Please check your MONGODB_URL and DB_NAME in .env file");
+        process.exit(1); // Exit with error code
     });

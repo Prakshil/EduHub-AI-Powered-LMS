@@ -1,31 +1,64 @@
 import React from "react";
 import { motion } from "framer-motion";
+import { useNavigate, useLocation } from "react-router-dom";
 
 const Footer = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const handleSmoothScroll = (sectionId) => {
+    // Robust scrolling helper: retry until target exists (for route navigation delays)
+    const tryScrollWithRetries = (maxAttempts = 20, interval = 100) => {
+      let attempts = 0;
+      const id = setInterval(() => {
+        attempts += 1;
+        const element = document.getElementById(sectionId);
+        if (element) {
+          clearInterval(id);
+          setTimeout(() => {
+            const headerOffset = 96;
+            const elementPosition = element.getBoundingClientRect().top + window.scrollY;
+            const offsetPosition = Math.max(0, elementPosition - headerOffset);
+            window.scrollTo({ top: offsetPosition, behavior: 'smooth' });
+          }, 40);
+        } else if (attempts >= maxAttempts) {
+          clearInterval(id);
+        }
+      }, interval);
+    };
+
+    if (location.pathname === "/") {
+      tryScrollWithRetries();
+    } else {
+      navigate("/");
+      setTimeout(() => tryScrollWithRetries(), 120);
+    }
+  };
+
   const footerLinks = {
     Product: [
-      { name: "Features", href: "#features" },
-      { name: "Pricing", href: "#pricing" },
-      { name: "Security", href: "#security" },
-      { name: "Integrations", href: "#integrations" },
+      { name: "Features", action: () => handleSmoothScroll("features"), href: null },
+      { name: "Pricing", action: () => handleSmoothScroll("pricing"), href: null },
+      { name: "Why EduHub", action: () => handleSmoothScroll("about"), href: null },
+      { name: "Documentation", href: "https://github.com/Prakshil/student-Management-System-MERN.git" },
     ],
     Company: [
-      { name: "About Us", href: "#about" },
-      { name: "Careers", href: "#careers" },
-      { name: "Blog", href: "#blog" },
-      { name: "Press Kit", href: "#press" },
+      { name: "About Us", action: () => handleSmoothScroll("about"), href: null },
+      { name: "Blog", href: "#" },
+      { name: "Careers", href: "#" },
+      { name: "Press", href: "#" },
     ],
-    Resources: [
-      { name: "Documentation", href: "#docs" },
-      { name: "API Reference", href: "#api" },
-      { name: "Support Center", href: "#support" },
-      { name: "Status", href: "#status" },
+    Support: [
+      { name: "Contact Us", action: () => handleSmoothScroll("footer"), href: null },
+      { name: "Help Center", href: "#" },
+      { name: "Status", href: "#" },
+      { name: "Community", href: "#" },
     ],
     Legal: [
       { name: "Privacy Policy", href: "#privacy" },
       { name: "Terms of Service", href: "#terms" },
       { name: "Cookie Policy", href: "#cookies" },
-      { name: "GDPR", href: "#gdpr" },
+      { name: "Compliance", href: "#" },
     ],
   };
 
@@ -50,7 +83,7 @@ const Footer = () => {
           />
         </svg>
       ),
-      href: "#",
+      href: "https://github.com/Prakshil/",
     },
     {
       name: "LinkedIn",
@@ -59,24 +92,15 @@ const Footer = () => {
           <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" />
         </svg>
       ),
-      href: "#",
-    },
-    {
-      name: "YouTube",
-      icon: (
-        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-          <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
-        </svg>
-      ),
-      href: "#",
-    },
+      href: "https://linkedin.com/in/prakshil-patel"
+    }
   ];
 
   return (
-    <footer id="footer" className="relative border-t border-white/10 bg-neutral-950/50 backdrop-blur-sm">
+    <footer id="footer" className="relative border-t border-gray-200 bg-white/80 backdrop-blur-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid grid-cols-2 md:grid-cols-6 gap-8 mb-8">
-          {/* Logo and Description */}
+
           <div className="col-span-2">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -85,12 +109,15 @@ const Footer = () => {
               viewport={{ once: true }}
             >
               <div className="flex items-center space-x-2 mb-4">
-                <div className="w-8 h-8 bg-gradient-to-br from-blue-400 via-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
-                  <span className="text-white font-bold text-lg">S</span>
+                <div className="w-8 h-8 bg-black rounded-lg flex items-center justify-center">
+                  <span className="text-white font-bold text-lg">E</span>
                 </div>
-                <span className="text-white font-bold text-xl">StudentMS</span>
+                <div className="flex flex-col">
+                  <span className="text-gray-900 font-bold text-xl">EduHub</span>
+                  <span className="text-gray-600 text-xs">AI-Powered LMS</span>
+                </div>
               </div>
-              <p className="text-neutral-400 text-sm mb-4 max-w-xs">
+              <p className="text-gray-600 text-sm mb-4 max-w-xs">
                 Empowering educational institutions with modern, efficient, and
                 secure student management solutions.
               </p>
@@ -99,8 +126,8 @@ const Footer = () => {
                   <motion.a
                     key={social.name}
                     href={social.href}
-                    whileHover={{ scale: 1.1, color: "#a855f7" }}
-                    className="text-neutral-400 hover:text-purple-500 transition-colors"
+                    whileHover={{ scale: 1.1 }}
+                    className="text-gray-500 hover:text-indigo-600 transition-colors"
                   >
                     {social.icon}
                   </motion.a>
@@ -109,7 +136,6 @@ const Footer = () => {
             </motion.div>
           </div>
 
-          {/* Links */}
           {Object.entries(footerLinks).map(([category, links], categoryIndex) => (
             <motion.div
               key={category}
@@ -118,16 +144,25 @@ const Footer = () => {
               transition={{ duration: 0.5, delay: categoryIndex * 0.1 }}
               viewport={{ once: true }}
             >
-              <h3 className="text-white font-semibold mb-4">{category}</h3>
+              <h3 className="text-gray-900 font-semibold mb-4">{category}</h3>
               <ul className="space-y-2">
                 {links.map((link) => (
                   <li key={link.name}>
-                    <a
-                      href={link.href}
-                      className="text-neutral-400 hover:text-white transition-colors text-sm"
-                    >
-                      {link.name}
-                    </a>
+                    {link.action ? (
+                      <button
+                        onClick={link.action}
+                        className="text-gray-600 hover:text-indigo-600 transition-colors text-sm cursor-pointer"
+                      >
+                        {link.name}
+                      </button>
+                    ) : (
+                      <a
+                        href={link.href}
+                        className="text-gray-600 hover:text-indigo-600 transition-colors text-sm"
+                      >
+                        {link.name}
+                      </a>
+                    )}
                   </li>
                 ))}
               </ul>
@@ -135,51 +170,53 @@ const Footer = () => {
           ))}
         </div>
 
-        {/* Newsletter */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
           viewport={{ once: true }}
-          className="border-t border-white/10 pt-8 pb-8"
+          className="border-t border-gray-200 pt-8 pb-8"
         >
           <div className="max-w-md">
-            <h3 className="text-white font-semibold mb-2">
-              Subscribe to our newsletter
+            <h3 className="text-gray-900 font-semibold mb-2">
+              In case of any Queries,
             </h3>
-            <p className="text-neutral-400 text-sm mb-4">
-              Get the latest updates and insights delivered to your inbox.
+            <p className="text-gray-600 text-sm mb-4">
+              Feel free to reach out to me , drop you mail 
             </p>
             <div className="flex gap-2">
               <input
                 type="email"
                 placeholder="Enter your email"
-                className="flex-1 px-4 py-2 bg-neutral-900 border border-white/10 rounded-lg text-white placeholder-neutral-500 focus:outline-none focus:border-purple-500 transition-colors"
+                className="flex-1 px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-800 placeholder-gray-400 focus:outline-none focus:border-indigo-500 transition-colors"
               />
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                className="px-6 py-2 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 text-white rounded-lg font-medium hover:shadow-lg hover:shadow-purple-500/50 transition-all"
+                className="px-6 py-2 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white rounded-lg font-medium hover:shadow-lg hover:shadow-indigo-500/25 transition-all"
               >
-                Subscribe
+                connect
               </motion.button>
             </div>
           </div>
         </motion.div>
 
         {/* Bottom Bar */}
-        <div className="border-t border-white/10 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
-          <p className="text-neutral-400 text-sm">
-            © 2025 StudentMS. All rights reserved.
+        <div className="border-t border-gray-200 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
+          <p className="text-gray-600 text-sm">
+            © 2025 EduHub. All rights reserved.
           </p>
-          <div className="flex items-center gap-6 text-sm text-neutral-400">
-            <a href="#" className="hover:text-white transition-colors">
+            <p className="text-gray-600 text-sm">
+            Made with love , Patience & coffee by Prakshil Patel
+          </p>
+          <div className="flex items-center gap-6 text-sm text-gray-600">
+            <a href="#" className="hover:text-indigo-600 transition-colors">
               Privacy
             </a>
-            <a href="#" className="hover:text-white transition-colors">
+            <a href="#" className="hover:text-indigo-600 transition-colors">
               Terms
             </a>
-            <a href="#" className="hover:text-white transition-colors">
+            <a href="#" className="hover:text-indigo-600 transition-colors">
               Cookies
             </a>
           </div>

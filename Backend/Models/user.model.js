@@ -65,8 +65,83 @@ const userSchema = new mongoose.Schema({
     },
     role: {
         type: String,
-        enum: ['user', 'admin'],
+        enum: ['user', 'admin', 'teacher'],
         default: 'user'
+    },
+    // Teacher-specific fields
+    teacherProfile: {
+        department: {
+            type: String,
+            trim: true,
+        },
+        designation: {
+            type: String,
+            trim: true,
+            // e.g., "Professor", "Associate Professor", "Assistant Professor", "Lecturer"
+        },
+        specialization: [{
+            type: String,
+            trim: true,
+        }],
+        qualification: {
+            type: String,
+            trim: true,
+        },
+        joiningDate: {
+            type: Date,
+        },
+        officeRoom: {
+            type: String,
+            trim: true,
+        },
+        officeHours: {
+            type: String,
+            trim: true,
+        },
+    },
+    // Student-specific fields
+    studentProfile: {
+        rollNumber: {
+            type: String,
+            trim: true,
+            uppercase: true,
+        },
+        batch: {
+            type: String,
+            trim: true,
+            // e.g., "2023-2027"
+        },
+        program: {
+            type: String,
+            trim: true,
+            // e.g., "B.Tech Computer Science"
+        },
+        currentSemester: {
+            type: Number,
+            min: 1,
+            max: 12,
+        },
+        semesterId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Semester",
+        },
+        semesterName: {
+            type: String,
+            trim: true,
+        },
+        cgpa: {
+            type: Number,
+            min: 0,
+            max: 4.0,
+            default: 0,
+        },
+        totalCredits: {
+            type: Number,
+            default: 0,
+        },
+        admissionDate: {
+            type: Date,
+        },
     }
 }, {
     timestamps: true

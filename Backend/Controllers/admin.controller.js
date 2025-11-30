@@ -1,5 +1,5 @@
 import User from '../Models/user.model.js';
-import Student from '../Models/Student.model.js';
+import Enrollment from '../Models/Enrollment.model.js';
 import ApiError from '../utils/ApiError.js';
 import ApiResponse from '../utils/ApiResponse.js';
 
@@ -86,20 +86,17 @@ export const deleteUser = async (req, res, next) => {
 // Get dashboard statistics
 export const getDashboardStats = async (req, res, next) => {
     try {
-        const totalUsers = await User.countDocuments({ role: 'user' });
+        const totalStudents = await User.countDocuments({ role: 'user' });
         const totalAdmins = await User.countDocuments({ role: 'admin' });
-        const totalStudents = await Student.countDocuments();
+        const totalTeachers = await User.countDocuments({ role: 'teacher' });
         
         // Get users registered this month
         const startOfMonth = new Date();
         startOfMonth.setDate(1);
         startOfMonth.setHours(0, 0, 0, 0);
         
-        const newUsersThisMonth = await User.countDocuments({
-            createdAt: { $gte: startOfMonth }
-        });
-        
-        const newStudentsThisMonth = await Student.countDocuments({
+        const newStudentsThisMonth = await User.countDocuments({
+            role: 'user',
             createdAt: { $gte: startOfMonth }
         });
         
@@ -109,7 +106,8 @@ export const getDashboardStats = async (req, res, next) => {
         ]);
         
         // Get gender distribution for students
-        const studentGenderStats = await Student.aggregate([
+        const studentGenderStats = await User.aggregate([
+            { $match: { role: 'user' } },
             { $group: { _id: '$gender', count: { $sum: 1 } } }
         ]);
         
@@ -132,8 +130,8 @@ export const getDashboardStats = async (req, res, next) => {
         ]);
         
         // Get students by month (last 6 months)
-        const studentsByMonth = await Student.aggregate([
-            { $match: { createdAt: { $gte: sixMonthsAgo } } },
+        const studentsByMonth = await User.aggregate([
+            { $match: { role: 'user', createdAt: { $gte: sixMonthsAgo } } },
             {
                 $group: {
                     _id: {
@@ -160,8 +158,8 @@ export const getDashboardStats = async (req, res, next) => {
         ]);
         
         // Get age distribution for students
-        const studentAgeStats = await Student.aggregate([
-            { $match: { age: { $exists: true, $ne: null } } },
+        const studentAgeStats = await User.aggregate([
+            { $match: { role: 'user', age: { $exists: true, $ne: null } } },
             {
                 $bucket: {
                     groupBy: '$age',
@@ -179,16 +177,16 @@ export const getDashboardStats = async (req, res, next) => {
             .limit(5);
         
         // Recent students
-        const recentStudents = await Student.find()
+        const recentStudents = await User.find({ role: 'user' })
+            .select('-password')
             .sort({ createdAt: -1 })
             .limit(5);
         
         res.status(200).json(
             new ApiResponse(200, {
-                totalUsers,
-                totalAdmins,
                 totalStudents,
-                newUsersThisMonth,
+                totalTeachers,
+                totalAdmins,
                 newStudentsThisMonth,
                 userGenderStats,
                 studentGenderStats,
@@ -235,24 +233,25 @@ export const getAllStudents = async (req, res, next) => {
     try {
         const { page = 1, limit = 10, search = '' } = req.query;
         
-        const query = {};
+        const query = { role: 'user' };
         
         if (search) {
             query.$or = [
-                { firstname: { $regex: search, $options: 'i' } },
-                { lastname: { $regex: search, $options: 'i' } },
-                { email: { $regex: search, $options: 'i' } }
+                { username: { $regex: search, $options: 'i' } },
+                { email: { $regex: search, $options: 'i' } },
+                { 'studentProfile.program': { $regex: search, $options: 'i' } }
             ];
         }
 
         const skip = (parseInt(page) - 1) * parseInt(limit);
         
-        const students = await Student.find(query)
+        const students = await User.find(query)
+            .select('-password')
             .sort({ createdAt: -1 })
             .skip(skip)
             .limit(parseInt(limit));
         
-        const totalStudents = await Student.countDocuments(query);
+        const totalStudents = await User.countDocuments(query);
         
         res.status(200).json(
             new ApiResponse(200, {
@@ -273,7 +272,7 @@ export const getAllStudents = async (req, res, next) => {
 // Get student by ID
 export const getStudentById = async (req, res, next) => {
     try {
-        const student = await Student.findById(req.params.id);
+        const student = await User.findOne({ _id: req.params.id, role: 'user' }).select('-password');
         
         if (!student) {
             throw new ApiError(404, 'Student not found');
@@ -288,15 +287,61 @@ export const getStudentById = async (req, res, next) => {
 // Delete student
 export const deleteStudent = async (req, res, next) => {
     try {
-        const student = await Student.findById(req.params.id);
+        const student = await User.findOneAndDelete({ _id: req.params.id, role: 'user' });
         
         if (!student) {
             throw new ApiError(404, 'Student not found');
         }
         
-        await Student.findByIdAndDelete(req.params.id);
-        
         res.status(200).json(new ApiResponse(200, null, 'Student deleted successfully'));
+    } catch (error) {
+        next(error);
+    }
+};
+
+export const getStudentUsers = async (req, res, next) => {
+    req.query = { ...req.query, role: 'user' };
+    return getAllUsers(req, res, next);
+};
+
+export const getStudentProfileDetails = async (req, res, next) => {
+    try {
+        const { id } = req.params;
+        const requester = req.user;
+
+        const student = await User.findById(id).select('-password');
+
+        if (!student) {
+            throw new ApiError(404, 'Student not found');
+        }
+
+        if (student.role !== 'user') {
+            throw new ApiError(400, 'Requested user is not a student');
+        }
+
+        // Students can view only their own profile
+        if (requester.role === 'user' && requester._id.toString() !== id.toString()) {
+            throw new ApiError(403, 'Access denied');
+        }
+
+        const enrollments = await Enrollment.find({ student: id })
+            .populate({
+                path: 'course',
+                populate: [
+                    { path: 'subject', select: 'name code credits department' },
+                    { path: 'teacher', select: 'username email profileimage' },
+                    { path: 'semester', select: 'name year term isCurrent' },
+                ],
+            })
+            .sort({ createdAt: -1 });
+
+        res.status(200).json(
+            new ApiResponse(
+                200,
+                { student, enrollments },
+                'Student profile fetched successfully'
+            )
+        );
     } catch (error) {
         next(error);
     }

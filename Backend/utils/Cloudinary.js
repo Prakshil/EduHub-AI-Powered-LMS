@@ -9,3 +9,11 @@ cloudinary.config({
 export const uploadOnCloudinary = async (localFilePath, options = {}) => {
   return cloudinary.uploader.upload(localFilePath, { resource_type: 'image', ...options });
 };
+
+export const uploadDocumentOnCloudinary = async (localFilePath, options = {}) => {
+  // For documents, use 'raw' resource type or 'auto' to detect
+  return cloudinary.uploader.upload(localFilePath, { 
+    resource_type: 'auto', // Auto-detect file type
+    ...options 
+  });
+};

@@ -1,6 +1,6 @@
 import express from 'express';
-import auth from '../Middlewares/auth.middleware.js';
-import { upload } from '../Middlewares/multer.middleware.js';
+import auth from '../middlewares/auth.middleware.js'; // already correct, no change needed
+import { upload } from '../middlewares/multer.middleware.js';
 const router = express.Router();
 import {createStudent, getAllStudents, singleStudent, updateStudent, deleteStudent} from '../Controllers/student.controller.js';
 

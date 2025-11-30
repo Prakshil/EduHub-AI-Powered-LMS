@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { toast } from 'react-hot-toast';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/context/AuthContext';
@@ -7,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { LoaderTwo } from '@/components/ui/loader';
+import { GraduationCap, Mail, Lock, ArrowLeft } from 'lucide-react';
 
 const Login = () => {
   const [formData, setFormData] = useState({
@@ -47,30 +49,42 @@ const Login = () => {
       
       if (response.success && response.data) {
         login(response.data.user, response.data.token);
-        navigate('/dashboard');
+        toast.success('Login successful!');
+        // Redirect based on role
+        const role = response.data.user.role;
+        if (role === 'admin') {
+          navigate('/admin');
+        } else if (role === 'teacher') {
+          navigate('/teacher');
+        } else {
+          navigate('/dashboard');
+        }
       } else {
         setError(response.message || 'Login failed');
+        toast.error(response.message || 'Login failed');
       }
     } catch (err) {
       setError(err.response?.data?.message || 'Login failed. Please try again.');
+      toast.error(err.response?.data?.message || 'Login failed. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen w-full bg-neutral-950 relative overflow-hidden flex items-center justify-center">
-      {/* Dark Nebula Mesh Background */}
+    <div className="min-h-screen w-full bg-white relative overflow-hidden flex items-center justify-center">
+      {/* Grid Background */}
       <div 
         className="fixed inset-0 z-0" 
         style={{
-          background: `
-            radial-gradient(at 20% 80%, hsla(270, 100%, 50%, 0.1) 0px, transparent 50%), 
-            radial-gradient(at 80% 20%, hsla(200, 100%, 50%, 0.1) 0px, transparent 50%), 
-            radial-gradient(at 50% 50%, hsla(300, 100%, 50%, 0.1) 0px, transparent 50%)
-          `
+          backgroundImage: 'linear-gradient(to right, #e5e7eb 1px, transparent 1px), linear-gradient(to bottom, #e5e7eb 1px, transparent 1px)',
+          backgroundSize: '40px 40px'
         }}
       />
+      
+      {/* Gradient blobs */}
+      <div className="absolute top-20 left-20 w-72 h-72 bg-indigo-200 rounded-full mix-blend-multiply filter blur-3xl opacity-40 animate-pulse"></div>
+      <div className="absolute bottom-20 right-20 w-72 h-72 bg-purple-200 rounded-full mix-blend-multiply filter blur-3xl opacity-40 animate-pulse"></div>
 
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -78,74 +92,87 @@ const Login = () => {
         transition={{ duration: 0.5 }}
         className="relative z-10 w-full max-w-md mx-4"
       >
-        <div className="bg-neutral-900/50 backdrop-blur-xl border border-purple-500/20 rounded-2xl p-8 shadow-2xl">
-          <div className="text-center mb-8">
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-400 via-purple-500 to-pink-500 bg-clip-text text-transparent mb-2">
-              Welcome Back
-            </h1>
-            <p className="text-neutral-400">Sign in to your account</p>
+        <div className="bg-white/80 backdrop-blur-xl border border-gray-200 rounded-2xl p-8 shadow-xl">
+          {/* Logo */}
+          <div className="flex justify-center mb-6">
+            <div className="flex flex-col items-center gap-3">
+              <div className="w-16 h-16 bg-black rounded-lg flex items-center justify-center shadow-lg">
+                <span className="text-white font-bold text-3xl">E</span>
+              </div>
+              <div className="text-center">
+                <h2 className="font-bold text-lg text-gray-900">EduHub</h2>
+                <p className="text-xs text-gray-600">AI-Powered LMS</p>
+              </div>
+            </div>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="text-center mb-8">
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">
+              Welcome Back
+            </h1>
+            <p className="text-gray-500">Sign in to your EduHub account</p>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-5">
             {error && (
               <motion.div
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 text-red-400 text-sm"
+                className="bg-red-50 border border-red-200 rounded-lg p-3 text-red-600 text-sm"
               >
                 {error}
               </motion.div>
             )}
 
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-neutral-200">Email</Label>
-              <Input
-                id="email"
-                name="email"
-                type="email"
-                placeholder="Enter your email"
-                value={formData.email}
-                onChange={handleChange}
-                className="bg-neutral-800/50 border-purple-500/20 text-white placeholder:text-neutral-500 focus:border-purple-500/40"
-                required
-              />
+              <Label htmlFor="email" className="text-gray-700">Email</Label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                <Input
+                  id="email"
+                  name="email"
+                  type="email"
+                  placeholder="Enter your email"
+                  value={formData.email}
+                  onChange={handleChange}
+                  className="pl-10 bg-gray-50 border-gray-200 text-gray-800 placeholder:text-gray-400 focus:border-indigo-500 focus:ring-indigo-500"
+                  required
+                />
+              </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password" className="text-neutral-200">Password</Label>
-              <Input
-                id="password"
-                name="password"
-                type="password"
-                placeholder="Enter your password"
-                value={formData.password}
-                onChange={handleChange}
-                className="bg-neutral-800/50 border-purple-500/20 text-white placeholder:text-neutral-500 focus:border-purple-500/40"
-                required
-              />
+              <Label htmlFor="password" className="text-gray-700">Password</Label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                <Input
+                  id="password"
+                  name="password"
+                  type="password"
+                  placeholder="Enter your password"
+                  value={formData.password}
+                  onChange={handleChange}
+                  className="pl-10 bg-gray-50 border-gray-200 text-gray-800 placeholder:text-gray-400 focus:border-indigo-500 focus:ring-indigo-500"
+                  required
+                />
+              </div>
             </div>
 
             <Button
               type="submit"
               disabled={loading}
-              className="w-full bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 hover:opacity-90 transition-opacity text-white font-semibold py-6"
+              className="w-full bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 hover:opacity-90 transition-opacity text-white font-semibold py-6 rounded-xl shadow-lg shadow-indigo-500/25"
             >
               {loading ? <LoaderTwo /> : 'Sign In'}
             </Button>
           </form>
 
           <div className="mt-6 text-center space-y-3">
-            <Link
-              to="/verify-otp"
-              className="text-purple-400 hover:text-purple-300 text-sm transition-colors block"
-            >
-              Verify with OTP  (In development phase)
-            </Link>
-            <div className="text-neutral-400 text-sm">
+            <div className="text-gray-500 text-sm">
               Don't have an account?{' '}
               <Link
                 to="/signup"
-                className="text-purple-400 hover:text-purple-300 transition-colors"
+                className="text-indigo-600 hover:text-indigo-700 font-medium transition-colors"
               >
                 Sign up
               </Link>
@@ -161,9 +188,10 @@ const Login = () => {
         >
           <Link
             to="/"
-            className="text-neutral-400 hover:text-neutral-300 text-sm transition-colors inline-flex items-center gap-2"
+            className="text-gray-500 hover:text-gray-700 text-sm transition-colors inline-flex items-center gap-2"
           >
-            ← Back to Home
+            <ArrowLeft className="h-4 w-4" />
+            Back to Home
           </Link>
         </motion.div>
       </motion.div>

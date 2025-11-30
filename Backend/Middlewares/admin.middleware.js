@@ -15,3 +15,4 @@ export const isAdmin = async (req, res, next) => {
         next(error);
     }
 };
+export default isAdmin;

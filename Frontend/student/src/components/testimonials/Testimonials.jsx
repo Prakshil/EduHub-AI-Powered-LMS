@@ -6,7 +6,7 @@ const Testimonials = () => {
   const testimonials = [
     {
       quote:
-        "StudentMS has transformed how we manage our institution. The analytics dashboard gives us insights we never had before, and our staff efficiency has increased by 40%.",
+        "EduHub has transformed how we manage our institution. The analytics dashboard gives us insights we never had before, and our staff efficiency has increased by 40%.",
       name: "Dr. Sarah Johnson",
       title: "Principal, Greenwood High School",
     },
@@ -24,7 +24,7 @@ const Testimonials = () => {
     },
     {
       quote:
-        "We've seen a significant improvement in parent engagement since implementing StudentMS. The communication features are top-notch.",
+        "We've seen a significant improvement in parent engagement since implementing EduHub. The communication features are top-notch.",
       name: "James Williams",
       title: "Dean, Oakwood Institute",
     },
@@ -36,7 +36,7 @@ const Testimonials = () => {
     },
     {
       quote:
-        "StudentMS has been a game-changer for our remote learning programs. The platform is reliable, secure, and easy to use.",
+        "EduHub has been a game-changer for our remote learning programs. The platform is reliable, secure, and easy to use.",
       name: "Robert Thompson",
       title: "IT Director, Valley High School",
     },
@@ -55,8 +55,8 @@ const Testimonials = () => {
           <h2 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-blue-400 via-purple-500 to-pink-500 bg-clip-text text-transparent mb-4">
             Loved by Educators Worldwide
           </h2>
-          <p className="text-neutral-400 text-lg max-w-2xl mx-auto">
-            See what educational institutions are saying about StudentMS
+          <p className="text-neutral-500 text-lg max-w-2xl mx-auto">
+            See what educational institutions are saying about EduHub
           </p>
         </motion.div>
 
@@ -68,7 +68,6 @@ const Testimonials = () => {
           />
         </div>
 
-        {/* Stats Section */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}

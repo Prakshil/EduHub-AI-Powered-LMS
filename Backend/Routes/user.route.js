@@ -1,8 +1,8 @@
 import express from 'express';
 const router = express.Router();
 import {signUp, login, singleUser, updateUser, deleteUser} from '../Controllers/user.controller.js';
-import auth from '../Middlewares/auth.middleware.js';
-import { upload } from '../Middlewares/multer.middleware.js';
+import auth from '../middlewares/auth.middleware.js'; // already correct, no change needed
+import { upload } from '../middlewares/multer.middleware.js';
 import { requestOtp, validateOtp, logout } from '../Controllers/auth.controller.js';
 
 

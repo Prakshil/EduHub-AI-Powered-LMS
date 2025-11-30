@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 
 const Navbar = () => {
@@ -8,6 +8,41 @@ const Navbar = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const handleSmoothScroll = (sectionId) => {
+    // Robust scrolling helper: retry until target exists (for route navigation delays)
+    const tryScrollWithRetries = (maxAttempts = 20, interval = 100) => {
+      let attempts = 0;
+      const id = setInterval(() => {
+        attempts += 1;
+        const element = document.getElementById(sectionId);
+        if (element) {
+          clearInterval(id);
+          // small delay to allow layout to settle
+          setTimeout(() => {
+            const headerOffset = 96; // height of fixed navbar (approx)
+            const elementPosition = element.getBoundingClientRect().top + window.scrollY;
+            const offsetPosition = Math.max(0, elementPosition - headerOffset);
+            window.scrollTo({ top: offsetPosition, behavior: 'smooth' });
+          }, 40);
+        } else if (attempts >= maxAttempts) {
+          clearInterval(id);
+        }
+      }, interval);
+    };
+
+    if (location.pathname === "/") {
+      // Already on landing page, attempt immediate scroll with retries
+      tryScrollWithRetries();
+      setMobileMenuOpen(false);
+    } else {
+      // Navigate to landing page first then attempt to scroll
+      navigate("/");
+      // start retries slightly after navigation begins
+      setTimeout(() => tryScrollWithRetries(), 120);
+    }
+  };
 
   useEffect(() => {
     const handleScroll = () => {
@@ -17,11 +52,49 @@ const Navbar = () => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const navItems = [
-    { name: "Home", href: "#home" },
-    { name: "Features", href: "#features" },
-    { name: "Contact", href: "#footer" },
+
+  // Role-based navigation links
+  const commonLinks = [
+    { name: "Dashboard", to: "/dashboard", roles: ["admin", "teacher", "student"] },
+    { name: "Announcements", to: "/announcements", roles: ["admin", "teacher", "student"] },
   ];
+  const adminLinks = [
+    { name: "Admin Panel", to: "/admin", roles: ["admin"] },
+    { name: "Users", to: "/admin/users", roles: ["admin"] },
+    { name: "Students", to: "/admin/students", roles: ["admin"] },
+    { name: "Subjects", to: "/subjects", roles: ["admin"] },
+    { name: "Semesters", to: "/semesters", roles: ["admin"] },
+    { name: "Courses", to: "/courses", roles: ["admin"] },
+  ];
+  const teacherLinks = [
+    { name: "My Courses", to: "/courses/my-courses", roles: ["teacher"] },
+    { name: "Subjects", to: "/subjects", roles: ["teacher"] },
+    { name: "Semesters", to: "/semesters", roles: ["teacher"] },
+  ];
+  const studentLinks = [
+    { name: "My Enrollments", to: "/enrollments/my-enrollments", roles: ["student"] },
+    { name: "Subjects", to: "/subjects", roles: ["student"] },
+    { name: "Semesters", to: "/semesters", roles: ["student"] },
+  ];
+
+  // Combine links based on user role
+  let navLinks = [];
+  if (user) {
+    navLinks = [
+      ...commonLinks,
+      ...(user.role === "admin" ? adminLinks : []),
+      ...(user.role === "teacher" ? teacherLinks : []),
+      ...(user.role === "user" ? studentLinks : []),
+    ];
+  } else {
+    navLinks = [
+      { name: "Home", to: "/", roles: [] },
+      { name: "Features", action: () => handleSmoothScroll("features"), roles: [] },
+      { name: "Pricing", action: () => handleSmoothScroll("pricing"), roles: [] },
+      { name: "About", action: () => handleSmoothScroll("about"), roles: [] },
+      { name: "Contact", action: () => handleSmoothScroll("footer"), roles: [] },
+    ];
+  }
 
   return (
     <motion.nav
@@ -34,48 +107,62 @@ const Navbar = () => {
           : "bg-transparent"
       }`}
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
+      <div className="max-w-7xl mx-auto px-6 sm:px-10 lg:px-16">
+        <div className="flex items-center justify-between h-20">
           {/* Logo */}
           <motion.div
             whileHover={{ scale: 1.05 }}
-            className="flex items-center space-x-2"
+            className="flex items-center gap-4"
           >
-            <div className="w-8 h-8 bg-gradient-to-br from-blue-400 via-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-lg">S</span>
+            <div className="w-10 h-10 bg-black rounded-lg flex items-center justify-center">
+              <span className="text-white font-bold text-xl">E</span>
             </div>
-            <span className="text-white font-bold text-xl bg-gradient-to-r from-blue-400 via-purple-500 to-pink-500 bg-clip-text text-transparent">
-              StudentMS
-            </span>
+            <div className="flex flex-col leading-tight">
+              <span className="text-white font-bold text-2xl">EduHub</span>
+              <span className="text-white/70 text-xs">AI-Powered LMS</span>
+            </div>
           </motion.div>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-8">
-            {navItems.map((item, index) => (
-              <motion.a
+          <div className="hidden md:flex items-center gap-10">
+            {navLinks.map((item, index) => (
+              <motion.div
                 key={item.name}
-                href={item.href}
                 initial={{ opacity: 0, y: -20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.1 }}
+                transition={{ delay: index * 0.07 }}
                 whileHover={{ scale: 1.1 }}
-                className="text-neutral-300 hover:text-white transition-colors relative group"
               >
-                {item.name}
-                <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-gradient-to-r from-blue-400 via-purple-500 to-pink-500 group-hover:w-full transition-all duration-300"></span>
-              </motion.a>
+                {item.action ? (
+                  <button
+                    onClick={item.action}
+                    className="text-neutral-300 hover:text-white transition-colors relative group px-4 py-2 rounded-md text-base font-medium cursor-pointer"
+                  >
+                    {item.name}
+                    <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-gradient-to-r from-blue-400 via-purple-500 to-pink-500 group-hover:w-full transition-all duration-300"></span>
+                  </button>
+                ) : (
+                  <Link
+                    to={item.to}
+                    className="text-neutral-300 hover:text-white transition-colors relative group px-4 py-2 rounded-md text-base font-medium"
+                  >
+                    {item.name}
+                    <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-gradient-to-r from-blue-400 via-purple-500 to-pink-500 group-hover:w-full transition-all duration-300"></span>
+                  </Link>
+                )}
+              </motion.div>
             ))}
           </div>
 
           {/* CTA Buttons */}
-          <div className="hidden md:flex items-center space-x-4">
+          <div className="hidden md:flex items-center gap-6">
             {user ? (
               <>
                 <motion.button
                   whileHover={{ scale: 1.05, boxShadow: "0 0 20px rgba(168, 85, 247, 0.5)" }}
                   whileTap={{ scale: 0.95 }}
                   onClick={() => navigate('/dashboard')}
-                  className="px-6 py-2 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 text-white rounded-lg font-medium hover:shadow-lg transition-all"
+                  className="px-7 py-2 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 text-white rounded-lg font-medium hover:shadow-lg transition-all"
                 >
                   Dashboard
                 </motion.button>
@@ -84,7 +171,7 @@ const Navbar = () => {
                     whileHover={{ scale: 1.05, boxShadow: "0 0 20px rgba(168, 85, 247, 0.5)" }}
                     whileTap={{ scale: 0.95 }}
                     onClick={() => navigate('/admin')}
-                    className="px-6 py-2 bg-gradient-to-r from-purple-600 via-pink-600 to-red-500 text-white rounded-lg font-medium hover:shadow-lg transition-all"
+                    className="px-7 py-2 bg-gradient-to-r from-purple-600 via-pink-600 to-red-500 text-white rounded-lg font-medium hover:shadow-lg transition-all"
                   >
                     Admin Panel
                   </motion.button>
@@ -96,7 +183,7 @@ const Navbar = () => {
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={() => navigate('/login')}
-                  className="px-4 py-2 text-white hover:text-blue-400 transition-colors"
+                  className="px-5 py-2 text-white hover:text-blue-400 transition-colors"
                 >
                   Sign In
                 </motion.button>
@@ -104,7 +191,7 @@ const Navbar = () => {
                   whileHover={{ scale: 1.05, boxShadow: "0 0 20px rgba(168, 85, 247, 0.5)" }}
                   whileTap={{ scale: 0.95 }}
                   onClick={() => navigate('/signup')}
-                  className="px-6 py-2 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 text-white rounded-lg font-medium hover:shadow-lg transition-all"
+                  className="px-7 py-2 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 text-white rounded-lg font-medium hover:shadow-lg transition-all"
                 >
                   Get Started
                 </motion.button>
@@ -155,15 +242,25 @@ const Navbar = () => {
         className="md:hidden overflow-hidden bg-black/95 backdrop-blur-lg border-t border-white/10"
       >
         <div className="px-4 py-4 space-y-3">
-          {navItems.map((item) => (
-            <a
-              key={item.name}
-              href={item.href}
-              className="block px-4 py-2 text-neutral-300 hover:text-white hover:bg-white/10 rounded-lg transition-all"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              {item.name}
-            </a>
+          {navLinks.map((item) => (
+            <div key={item.name}>
+              {item.action ? (
+                <button
+                  onClick={item.action}
+                  className="w-full text-left px-4 py-2 text-neutral-300 hover:text-white hover:bg-white/10 rounded-lg transition-all"
+                >
+                  {item.name}
+                </button>
+              ) : (
+                <Link
+                  to={item.to}
+                  className="block px-4 py-2 text-neutral-300 hover:text-white hover:bg-white/10 rounded-lg transition-all"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  {item.name}
+                </Link>
+              )}
+            </div>
           ))}
           <div className="pt-4 space-y-2 border-t border-white/10">
             {user ? (
