@@ -1,0 +1,73 @@
+import ApiError from "../utils/ApiError.js";
+
+// Centralized Express error handler
+export default function errorHandler(err, req, res, next) {
+  // If response already sent, delegate to default handler
+  if (res.headersSent) return next(err);
+
+  let status = 500;
+  let message = "Internal Server Error";
+  let errors = [];
+
+  // Known custom error
+  if (err instanceof ApiError) {
+    status = err.statusCode || 500;
+    message = err.message || message;
+    errors = Array.isArray(err.errors) ? err.errors : [];
+  }
+
+  // Mongoose validation error
+  else if (err?.name === "ValidationError") {
+    status = 400;
+    message = "Validation failed";
+    errors = Object.values(err.errors || {}).map((e) => e.message);
+  }
+
+  // Duplicate key error
+  else if (err?.code === 11000) {
+    status = 409;
+    const fields = Object.keys(err.keyValue || {});
+    message = `Duplicate value for field(s): ${fields.join(", ")}`;
+    errors = [message];
+  }
+
+  // JWT errors
+  else if (err?.name === "JsonWebTokenError") {
+    status = 401;
+    message = "Unauthorized: Invalid token";
+  } else if (err?.name === "TokenExpiredError") {
+    status = 401;
+    message = "Unauthorized: Token expired";
+  }
+  
+  // Generic error - log it for debugging
+  else {
+    console.error('Unhandled error:', err);
+    message = err?.message || message;
+    if (process.env.NODE_ENV === 'development') {
+      errors = [err?.stack || err?.message || 'Unknown error'];
+    }
+  }
+
+  // Format error response similar to ApiResponse
+  const errorResponse = {
+    success: false,
+    statusCode: status,
+    message: message,
+    data: null,
+    errors: errors,
+  };
+
+  // Log error in development
+  if (process.env.NODE_ENV === 'development' || status >= 500) {
+    console.error('Error Handler:', {
+      status,
+      message,
+      errors,
+      stack: err?.stack,
+      originalError: err,
+    });
+  }
+
+  return res.status(status).json(errorResponse);
+}
