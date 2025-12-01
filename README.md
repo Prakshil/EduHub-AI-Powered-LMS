@@ -741,7 +741,7 @@ We'd love to hear your ideas! [Submit a feature request](https://github.com/Prak
 
 <div align="center">
 
-### Made with ❤️, 🧠 AI, and an *ungodly* amount of ☕
+### Made with ❤️ and an *ungodly* amount of ☕
 
 **If EduHub helped streamline your institution, consider giving it a ⭐**
 
