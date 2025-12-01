@@ -216,67 +216,69 @@ const Announcements = () => {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: index * 0.05 }}
                   >
-                    <div className="relative group">
-                      <Link to={`/announcements/${announcement._id}`}>
-                        <Card className={`bg-white border border-gray-200 p-6 hover:shadow-md transition-all cursor-pointer ${
-                          !announcement.isRead ? 'border-l-4 border-l-gray-800' : ''
-                        }`}>
-                          <div className="flex items-start gap-4">
-                            <div className="p-3 bg-gray-100 rounded-lg">
-                              <Megaphone className="h-6 w-6 text-gray-600" />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2 flex-wrap">
-                                {announcement.isPinned && (
-                                  <Pin className="h-4 w-4 text-amber-500 fill-amber-500" />
-                                )}
-                                {!announcement.isRead && (
-                                  <span className="w-2 h-2 rounded-full bg-gray-800"></span>
-                                )}
-                                <h3 className="text-lg font-bold text-gray-800">{announcement.title}</h3>
+                    <div className="relative flex">
+                      <div className="flex-1">
+                        <Link to={`/announcements/${announcement._id}`}> 
+                          <Card className={`bg-white border border-gray-200 p-6 hover:shadow-md transition-all cursor-pointer ${
+                            !announcement.isRead ? 'border-l-4 border-l-gray-800' : ''
+                          }`}>
+                            <div className="flex items-start gap-4">
+                              <div className="p-3 bg-gray-100 rounded-lg">
+                                <Megaphone className="h-6 w-6 text-gray-600" />
                               </div>
-                              <p className="text-gray-500 mt-2 line-clamp-2">{announcement.content}</p>
-                              <div className="flex items-center gap-4 mt-4 flex-wrap">
-                                <Badge variant="outline" className={getCategoryStyle(announcement.category)}>
-                                  {announcement.category}
-                                </Badge>
-                                {announcement.priority !== 'normal' && (
-                                  <Badge variant="outline" className={
-                                    announcement.priority === 'urgent' ? 'bg-red-50 text-red-700' :
-                                    announcement.priority === 'high' ? 'bg-orange-50 text-orange-700' : ''
-                                  }>
-                                    {announcement.priority}
-                                  </Badge>
-                                )}
-                                <div className="flex items-center gap-2 text-gray-400 text-sm">
-                                  <Avatar className="h-5 w-5">
-                                    <AvatarImage src={announcement.author?.profileimage} />
-                                    <AvatarFallback className="bg-gray-100 text-gray-600 text-xs">
-                                      {getInitials(announcement.author?.username)}
-                                    </AvatarFallback>
-                                  </Avatar>
-                                  <span>{announcement.author?.username}</span>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  {announcement.isPinned && (
+                                    <Pin className="h-4 w-4 text-amber-500 fill-amber-500" />
+                                  )}
+                                  {!announcement.isRead && (
+                                    <span className="w-2 h-2 rounded-full bg-gray-800"></span>
+                                  )}
+                                  <h3 className="text-lg font-bold text-gray-800">{announcement.title}</h3>
                                 </div>
-                                <span className="text-gray-400 text-sm flex items-center gap-1">
-                                  <Calendar className="h-4 w-4" />
-                                  {formatDate(announcement.createdAt)}
-                                </span>
-                                <span className="text-gray-400 text-sm flex items-center gap-1">
-                                  <Eye className="h-4 w-4" />
-                                  {announcement.readCount} views
-                                </span>
+                                <p className="text-gray-500 mt-2 line-clamp-2">{announcement.content}</p>
+                                <div className="flex items-center gap-4 mt-4 flex-wrap">
+                                  <Badge variant="outline" className={getCategoryStyle(announcement.category)}>
+                                    {announcement.category}
+                                  </Badge>
+                                  {announcement.priority !== 'normal' && (
+                                    <Badge variant="outline" className={
+                                      announcement.priority === 'urgent' ? 'bg-red-50 text-red-700' :
+                                      announcement.priority === 'high' ? 'bg-orange-50 text-orange-700' : ''
+                                    }>
+                                      {announcement.priority}
+                                    </Badge>
+                                  )}
+                                  <div className="flex items-center gap-2 text-gray-400 text-sm">
+                                    <Avatar className="h-5 w-5">
+                                      <AvatarImage src={announcement.author?.profileimage} />
+                                      <AvatarFallback className="bg-gray-100 text-gray-600 text-xs">
+                                        {getInitials(announcement.author?.username)}
+                                      </AvatarFallback>
+                                    </Avatar>
+                                    <span>{announcement.author?.username}</span>
+                                  </div>
+                                  <span className="text-gray-400 text-sm flex items-center gap-1">
+                                    <Calendar className="h-4 w-4" />
+                                    {formatDate(announcement.createdAt)}
+                                  </span>
+                                  <span className="text-gray-400 text-sm flex items-center gap-1">
+                                    <Eye className="h-4 w-4" />
+                                    {announcement.readCount} views
+                                  </span>
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        </Card>
-                      </Link>
+                          </Card>
+                        </Link>
+                      </div>
                       {canDelete && (
                         <button
                           onClick={handleDelete}
-                          className="absolute top-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity bg-red-100 hover:bg-red-200 text-red-700 rounded-full p-2"
+                          className="ml-2 mt-2 h-10 w-10 flex items-center justify-center bg-red-100 hover:bg-red-200 text-red-700 rounded-full"
                           title="Delete announcement"
                         >
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5-4h4a2 2 0 012 2v2H7V5a2 2 0 012-2zm-2 6h8" /></svg>
                         </button>
                       )}
                     </div>

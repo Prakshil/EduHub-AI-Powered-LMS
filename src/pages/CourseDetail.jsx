@@ -218,14 +218,14 @@ const CourseDetail = () => {
                     <h3 className="text-lg font-bold text-gray-800 mb-4">Instructor</h3>
                     <div className="flex items-center gap-4">
                       <Avatar className="h-16 w-16 border-2 border-gray-200">
-                        <AvatarImage src={course.teacher?.profileimage} />
+                        <AvatarImage src={course.teacher?.profileimage || 'https://imgs.search.brave.com/FWHa9QRttw1JSSHVgTxnaCCKeCisCTYKWv3idxlo3AI/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly93d3cu/c3ZncmVwby5jb20v/c2hvdy8zMzU0NTUv/cHJvZmlsZS1kZWZh/dWx0LnN2Zw'} />
                         <AvatarFallback className="bg-gray-100 text-gray-600">
-                          {getInitials(course.teacher?.username)}
+                          {getInitials(course.teacher?.username || 'TBA')}
                         </AvatarFallback>
                       </Avatar>
                       <div>
-                        <p className="text-gray-800 font-medium">{course.teacher?.username}</p>
-                        <p className="text-gray-500 text-sm">{course.teacher?.email}</p>
+                        <p className="text-gray-800 font-medium">{course.teacher?.username || 'TBA'}</p>
+                        <p className="text-gray-500 text-sm">{course.teacher?.email || ''}</p>
                       </div>
                     </div>
                   </Card>
@@ -326,11 +326,19 @@ const CourseDetail = () => {
                               </td>
                               <td className="py-4 px-4">
                                 <div className="flex items-center gap-2">
-                                  <div className="w-20 h-2 bg-gray-100 rounded-full overflow-hidden">
-                                    <div className="h-full bg-gray-800 rounded-full" 
-                                         style={{ width: `${enrollment.progressPercentage || 0}%` }} />
-                                  </div>
-                                  <span className="text-gray-600 text-sm">{enrollment.progressPercentage || 0}%</span>
+                                  {(() => {
+                                    // Find grade for this student if available
+                                    const grade = grades.grades?.find(g => g.student?._id === enrollment.student?._id);
+                                    const percent = grade?.totalPercentage ?? enrollment.progressPercentage ?? 0;
+                                    return (
+                                      <>
+                                        <div className="w-20 h-2 bg-gray-100 rounded-full overflow-hidden">
+                                          <div className="h-full bg-gray-800 rounded-full" style={{ width: `${percent}%` }} />
+                                        </div>
+                                        <span className="text-gray-600 text-sm">{percent}%</span>
+                                      </>
+                                    );
+                                  })()}
                                 </div>
                               </td>
                             </tr>

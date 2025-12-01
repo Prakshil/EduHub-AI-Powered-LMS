@@ -234,13 +234,13 @@ const Courses = () => {
                     <div className="p-4 space-y-3">
                       <div className="flex items-center gap-3">
                         <Avatar className="h-8 w-8 border border-gray-200">
-                          <AvatarImage src={course.teacher?.profileimage} />
+                          <AvatarImage src={course.teacher?.profileimage || 'https://imgs.search.brave.com/FWHa9QRttw1JSSHVgTxnaCCKeCisCTYKWv3idxlo3AI/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly93d3cu/c3ZncmVwby5jb20v/c2hvdy8zMzU0NTUv/cHJvZmlsZS1kZWZh/dWx0LnN2Zw'} />
                           <AvatarFallback className="bg-gray-100 text-gray-600 text-xs">
-                            {getInitials(course.teacher?.username)}
+                            {getInitials(course.teacher?.username || 'TBA')}
                           </AvatarFallback>
                         </Avatar>
                         <div>
-                          <p className="text-gray-800 text-sm">{course.teacher?.username}</p>
+                          <p className="text-gray-800 text-sm">{course.teacher?.username || 'TBA'}</p>
                           <p className="text-gray-400 text-xs">Instructor</p>
                         </div>
                       </div>
