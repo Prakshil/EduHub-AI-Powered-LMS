@@ -20,7 +20,7 @@ dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
-const HOSTNAME = process.env.HOSTNAME || 'localhost';
+const HOST = '0.0.0.0';
 
 // CORS configuration - MUST be before routes
 app.use(cors({
@@ -101,14 +101,14 @@ ConnectDB()
     .then(() => {
         console.log(`Database ${process.env.DB_NAME} connected successfully`);
         // Start the server
-        app.listen(PORT, HOSTNAME, () => {
-            console.log(`✅ Server is listening on http://${HOSTNAME}:${PORT}`);
-            console.log(`📡 API endpoints available at http://${HOSTNAME}:${PORT}/api/v1`);
+        app.listen(PORT, HOST, () => {
+            console.log(`✅ Server is listening on http://${HOST}:${PORT}`);
+            console.log(`📡 API endpoints available at http://${HOST}:${PORT}/api/v1`);
         });
     })
     .catch((error) => {
         console.error("❌ Database connection failed:", error);
         console.error("⚠️  Server will not start without database connection.");
         console.error("💡 Please check your MONGODB_URL and DB_NAME in .env file");
-        process.exit(1); // Exit with error code
+        process.exit(1); 
     });
