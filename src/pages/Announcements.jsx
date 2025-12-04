@@ -190,12 +190,8 @@ const Announcements = () => {
           ) : (
             <div className="space-y-4">
               {filteredAnnouncements.map((announcement, index) => {
-                // Determine if the user can delete: admin, author, or has read
-                const isAdmin = user?.role === 'admin';
-                const isAuthor = announcement.author?._id === user?._id;
-                const hasRead = Array.isArray(announcement.readBy) && announcement.readBy.some(r => r.user === user?._id);
-
-                const canDelete = isAdmin || isAuthor || hasRead;
+                // Allow any authenticated user to delete announcements (backend now permits this)
+                const canDelete = Boolean(user);
 
                 const handleDelete = async (e) => {
                   e.preventDefault();

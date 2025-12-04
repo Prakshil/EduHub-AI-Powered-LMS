@@ -28,6 +28,17 @@ const Signup = () => {
     profileimage: null,
   });
   const [semesters, setSemesters] = useState([]);
+  // Fallback display-only semester options when API returns none
+  const fallbackSemesters = [
+    { _id: 'fallback-1', name: 'Semester 1' },
+    { _id: 'fallback-2', name: 'Semester 2' },
+    { _id: 'fallback-3', name: 'Semester 3' },
+    { _id: 'fallback-4', name: 'Semester 4' },
+    { _id: 'fallback-5', name: 'Semester 5' },
+    { _id: 'fallback-6', name: 'Semester 6' },
+    { _id: 'fallback-7', name: 'Semester 7' },
+    { _id: 'fallback-8', name: 'Semester 8' },
+  ];
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
@@ -299,7 +310,7 @@ const Signup = () => {
 
               <div className="space-y-2">
                 <Label htmlFor="gender" className="text-gray-700">Gender *</Label>
-                <Select onValueChange={(value) => handleSelectChange('gender', value)} required>
+                <Select value={formData.gender} onValueChange={(value) => handleSelectChange('gender', value)} required>
                   <SelectTrigger className="bg-gray-50 border-gray-200 text-gray-800">
                     <SelectValue placeholder="Select gender" />
                   </SelectTrigger>
@@ -315,18 +326,23 @@ const Signup = () => {
               {formData.role === 'user' && (
                 <div className="space-y-2 md:col-span-2">
                   <Label htmlFor="semester" className="text-gray-700">Current Semester *</Label>
-                  <Select onValueChange={(value) => handleSelectChange('semester', value)} required>
-                    <SelectTrigger className="bg-gray-50 border-gray-200 text-gray-800">
-                      <SelectValue placeholder="Select your current semester" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-white border-gray-200">
-                      {semesters.map(sem => (
-                        <SelectItem key={sem._id} value={sem._id}>
-                          {sem.name} {sem.isCurrent && '(Current)'}
-                        </SelectItem>
+                  <div>
+                    <select
+                      id="semester"
+                      name="semester"
+                      value={formData.semester}
+                      onChange={(e) => handleSelectChange('semester', e.target.value)}
+                      required
+                      className="w-full rounded-md bg-gray-50 border border-gray-200 text-gray-800 px-3 py-2"
+                    >
+                      <option value="">Select your current semester</option>
+                      {(semesters && semesters.length ? semesters : fallbackSemesters).map(sem => (
+                        <option key={sem._id} value={sem._id}>
+                          {sem.name}{sem.isCurrent ? ' (Current)' : ''}
+                        </option>
                       ))}
-                    </SelectContent>
-                  </Select>
+                    </select>
+                  </div>
                 </div>
               )}
 

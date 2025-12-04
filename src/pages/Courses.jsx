@@ -46,6 +46,16 @@ const Courses = () => {
     fetchData();
   }, [selectedSemester, activeTab]);
 
+  // Initialize semester filter to the student's semester on first load
+  useEffect(() => {
+    if (user?.role === 'user') {
+      const studentSem = user?.studentProfile?.semesterId || user?.studentProfile?.semesterId?._id;
+      if (studentSem) {
+        setSelectedSemester(String(studentSem));
+      }
+    }
+  }, [user]);
+
   const fetchData = async () => {
     try {
       setLoading(true);
@@ -175,12 +185,18 @@ const Courses = () => {
                 />
               </div>
               
-              <Select value={selectedSemester} onValueChange={setSelectedSemester}>
-                <SelectTrigger className="w-48 border-gray-300">
+              <Select 
+                value={selectedSemester}
+                onValueChange={(val) => { if (user?.role !== 'user') setSelectedSemester(val); }}
+                disabled={user?.role === 'user'}
+              >
+                <SelectTrigger className={`w-48 border-gray-300 ${user?.role === 'user' ? 'bg-gray-100 cursor-not-allowed' : ''}`} disabled={user?.role === 'user'}>
                   <SelectValue placeholder="Select Semester" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Semesters</SelectItem>
+                  {user?.role !== 'user' && (
+                    <SelectItem value="all">All Semesters</SelectItem>
+                  )}
                   {semesters.map(sem => (
                     <SelectItem key={sem._id} value={sem._id}>
                       {sem.name} {sem.isCurrent && '(Current)'}
@@ -236,11 +252,11 @@ const Courses = () => {
                         <Avatar className="h-8 w-8 border border-gray-200">
                           <AvatarImage src={course.teacher?.profileimage || 'https://imgs.search.brave.com/FWHa9QRttw1JSSHVgTxnaCCKeCisCTYKWv3idxlo3AI/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly93d3cu/c3ZncmVwby5jb20v/c2hvdy8zMzU0NTUv/cHJvZmlsZS1kZWZh/dWx0LnN2Zw'} />
                           <AvatarFallback className="bg-gray-100 text-gray-600 text-xs">
-                            {getInitials(course.teacher?.username || 'TBA')}
+                            {getInitials(course.teacher?.username || course.teacher?.email?.split('@')[0] || 'TBA')}
                           </AvatarFallback>
                         </Avatar>
                         <div>
-                          <p className="text-gray-800 text-sm">{course.teacher?.username || 'TBA'}</p>
+                          <p className="text-gray-800 text-sm">{course.teacher?.username || course.teacher?.email?.split('@')[0] || 'TBA'}</p>
                           <p className="text-gray-400 text-xs">Instructor</p>
                         </div>
                       </div>

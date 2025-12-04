@@ -96,6 +96,9 @@ const AdminDashboard = () => {
   const [selectedTeacherCourseId, setSelectedTeacherCourseId] = useState('');
   const [assigningTeacherCourse, setAssigningTeacherCourse] = useState(false);
   const [revokingCourseId, setRevokingCourseId] = useState('');
+  const [showEditTeacherModal, setShowEditTeacherModal] = useState(false);
+  const [editingTeacher, setEditingTeacher] = useState(null);
+  const [editDept, setEditDept] = useState('');
   const [selectedCourseSemester, setSelectedCourseSemester] = useState('all');
 
   useEffect(() => {
@@ -334,6 +337,30 @@ const AdminDashboard = () => {
     setTeacherForCourse(teacher);
     setSelectedTeacherCourseId('');
     setShowTeacherCourseModal(true);
+  };
+
+  const openEditTeacherModal = (teacher) => {
+    setEditingTeacher(teacher);
+    setEditDept(teacher?.teacherProfile?.department || '');
+    setShowEditTeacherModal(true);
+  };
+
+  const saveTeacherDept = async () => {
+    if (!editingTeacher) return;
+    try {
+      const payload = { teacherProfile: JSON.stringify({ ...(editingTeacher.teacherProfile || {}), department: editDept }) };
+      const res = await userAPI.updateUser(editingTeacher._id, payload);
+      if (res.success) {
+        toast.success('Department updated');
+        setTeachers(prev => prev.map(t => t._id === editingTeacher._id ? res.data : t));
+        setShowEditTeacherModal(false);
+        setEditingTeacher(null);
+      } else {
+        toast.error(res.message || 'Failed to update teacher');
+      }
+    } catch (err) {
+      toast.error(err?.response?.data?.message || 'Failed to update teacher');
+    }
   };
 
   const handleAssignCourseToTeacher = async () => {
@@ -785,6 +812,15 @@ const AdminDashboard = () => {
                           >
                             Assign Course
                           </Button>
+                          {user?.role === 'admin' && (
+                            <Button
+                              variant="outline"
+                              className="border-yellow-300 text-yellow-700 hover:bg-yellow-50"
+                              onClick={() => openEditTeacherModal(teacher)}
+                            >
+                              Edit Dept
+                            </Button>
+                          )}
                           <Button
                             variant="outline"
                             className="border-purple-300 text-purple-600 hover:bg-purple-50"
@@ -1268,6 +1304,38 @@ const AdminDashboard = () => {
       )}
 
       {/* Student Details Modal */}
+      {/* Edit Teacher Department Modal */}
+      {showEditTeacherModal && editingTeacher && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-white border border-gray-200 rounded-xl shadow-2xl p-6 max-w-md w-full"
+          >
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-bold">Edit Department</h3>
+              <Button variant="ghost" size="sm" onClick={() => { setShowEditTeacherModal(false); setEditingTeacher(null); }}>
+                <X className="h-5 w-5" />
+              </Button>
+            </div>
+
+            <div className="space-y-4">
+              <p className="text-sm text-gray-600">Teacher: <span className="font-medium">{getStudentName(editingTeacher)}</span></p>
+              <Label className="text-gray-700">Department</Label>
+              <Input value={editDept} onChange={(e) => setEditDept(e.target.value)} placeholder="e.g., Computer Science" className="bg-gray-50 border-gray-200" />
+
+              <div className="flex gap-3 pt-2">
+                <Button variant="outline" className="flex-1" onClick={() => { setShowEditTeacherModal(false); setEditingTeacher(null); }}>
+                  Cancel
+                </Button>
+                <Button className="flex-1 bg-gradient-to-r from-yellow-500 to-yellow-600 text-white" onClick={saveTeacherDept}>
+                  Save
+                </Button>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      )}
       {showStudentDetails && selectedStudent && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <motion.div
