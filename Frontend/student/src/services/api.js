@@ -25,6 +25,34 @@ api.interceptors.request.use(
   }
 );
 
+// Handle unauthorized responses globally
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    const status = error?.response?.status;
+
+    if (status === 401) {
+      try {
+        // Clear any stale auth state
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+      } catch (_) {
+        // Ignore storage errors
+      }
+
+      // If running in a browser, redirect to login
+      if (typeof window !== 'undefined') {
+        const currentPath = window.location.pathname;
+        if (!currentPath.includes('/login')) {
+          window.location.href = '/login';
+        }
+      }
+    }
+
+    return Promise.reject(error);
+  }
+);
+
 // Auth APIs
 export const authAPI = {
   signup: async (userData) => {
@@ -246,8 +274,8 @@ export const courseAPI = {
     return response.data;
   },
   
-  getMyCourses: async () => {
-    const response = await api.get('/courses/my-courses');
+  getMyCourses: async (params = {}) => {
+    const response = await api.get('/courses/my-courses', { params });
     return response.data;
   },
   

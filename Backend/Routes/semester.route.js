@@ -13,10 +13,10 @@ import { isAdmin } from '../middlewares/admin.middleware.js';
 
 const router = express.Router();
 
-// Public routes (authenticated users)
-router.get('/', verifyJWT, getAllSemesters);
-router.get('/current', verifyJWT, getCurrentSemester);
-router.get('/:id', verifyJWT, getSemesterById);
+// Read-only semester info is safe to expose without auth
+router.get('/', getAllSemesters);
+router.get('/current', getCurrentSemester);
+router.get('/:id', getSemesterById);
 
 // Admin only routes
 router.post('/', verifyJWT, isAdmin, createSemester);

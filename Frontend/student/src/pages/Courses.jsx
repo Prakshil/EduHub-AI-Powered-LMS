@@ -75,7 +75,7 @@ const Courses = () => {
         }
       } else {
         const coursesRes = activeTab === 'my-courses' 
-          ? await courseAPI.getMyCourses()
+          ? await courseAPI.getMyCourses(semesterFilter ? { semester: semesterFilter } : {})
           : await courseAPI.getAll(semesterFilter ? { semester: semesterFilter } : {});
         if (coursesRes.success) {
           setCourses(coursesRes.data?.courses || coursesRes.data);
@@ -236,11 +236,11 @@ const Courses = () => {
                         <Avatar className="h-8 w-8 border border-gray-200">
                           <AvatarImage src={course.teacher?.profileimage} />
                           <AvatarFallback className="bg-gray-100 text-gray-600 text-xs">
-                            {getInitials(course.teacher?.username)}
+                            {getInitials(course.teacher?.username || 'Unassigned')}
                           </AvatarFallback>
                         </Avatar>
                         <div>
-                          <p className="text-gray-800 text-sm">{course.teacher?.username}</p>
+                          <p className="text-gray-800 text-sm">{course.teacher?.username || 'Unassigned'}</p>
                           <p className="text-gray-400 text-xs">Instructor</p>
                         </div>
                       </div>
