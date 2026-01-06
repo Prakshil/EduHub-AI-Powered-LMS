@@ -526,7 +526,9 @@ export const assignmentAPI = {
   },
 
   generateExam: async (data) => {
-    const response = await api.post('/assignments/generate-exam', data);
+    // Use the central exam generation endpoint to avoid
+    // relying on an extra assignments alias route.
+    const response = await api.post('/exam/generate', data);
     return response.data;
   },
 };
