@@ -63,7 +63,9 @@ const Courses = () => {
       
       if (semestersRes.success) {
         setSemesters(semestersRes.data);
-        if (selectedSemester === 'all') {
+        // Only students should default to current semester automatically.
+        // For teachers/admins, keep 'all' so they can see assignments across semesters.
+        if (selectedSemester === 'all' && user?.role === 'user') {
           const currentSem = semestersRes.data.find(s => s.isCurrent);
           if (currentSem) {
             setSelectedSemester(currentSem._id);

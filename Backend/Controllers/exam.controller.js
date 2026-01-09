@@ -236,7 +236,16 @@ Continue this format for all ${numQuestionsParsed} questions.`;
                 } catch (modelError) {
                     console.warn(`❌ Model ${tryModel} failed:`, modelError.message);
                     lastError = modelError;
-                    // Continue to next model
+
+                    const msg = (modelError.message || '').toLowerCase();
+                    const status = modelError.status || modelError.code;
+
+                    // If it's clearly a quota/billing issue, stop trying
+                    if ((status === 429) || msg.includes('quota') || msg.includes('billing')) {
+                        console.warn('Stopping model attempts due to quota/billing error');
+                        break;
+                    }
+                    // Otherwise continue to next model
                 }
             }
             
@@ -338,19 +347,23 @@ Continue this format for all ${numQuestionsParsed} questions.`;
             // Provide user-friendly error messages
             let userMessage = 'Failed to generate exam questions';
             let httpStatus = 500;
+
+            const lower = errorMessage.toLowerCase();
             
-            if (errorMessage.toLowerCase().includes('api key') || errorMessage.toLowerCase().includes('invalid api key')) {
-                userMessage = 'Gemini API key is invalid or missing. Please check your GEMINI_API_KEY in the .env file.';
+            if (lower.includes('api key') || lower.includes('invalid api key')) {
+                userMessage = 'Gemini API key is invalid or missing. Please check your GEMINI_API_KEY in the backend environment.';
                 httpStatus = 401;
-            } else if (errorMessage.toLowerCase().includes('quota') || errorMessage.toLowerCase().includes('billing')) {
+            } else if (lower.includes('quota') || lower.includes('billing')) {
                 userMessage = 'Gemini API quota exceeded. Please check your Google Cloud billing and quota limits.';
                 httpStatus = 429;
-            } else if (errorMessage.toLowerCase().includes('safety') || errorMessage.toLowerCase().includes('blocked')) {
+            } else if (lower.includes('safety') || lower.includes('blocked')) {
                 userMessage = 'Content was blocked by safety filters. Please try with different parameters.';
                 httpStatus = 400;
-            } else if (errorMessage.toLowerCase().includes('model') || errorMessage.toLowerCase().includes('not found')) {
-                userMessage = `Gemini model not found: ${errorMessage}. Please check your model configuration.`;
-                httpStatus = 404;
+            } else if (lower.includes('model') || lower.includes('not found')) {
+                // This is a configuration issue, not a missing HTTP route,
+                // so return 500 with a clear message instead of 404.
+                userMessage = 'Gemini model configuration error. Please verify GEMINI_MODEL (if set) and that your API key has access to the selected model.';
+                httpStatus = 500;
             } else {
                 userMessage = `Gemini API error: ${errorMessage}`;
             }

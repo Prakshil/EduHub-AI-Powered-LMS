@@ -311,9 +311,11 @@ export const getCoursesByTeacher = async (req, res, next) => {
         
         // Admins can see all courses, teachers see only their courses
         let query = {};
-        if (req.user.role === 'admin') {
-            // Admin sees all courses - no teacher filter
-        } else {
+        // If a specific teacherId is provided in the route, always filter by it.
+        // Otherwise, teachers should only see their own courses; admins can see all.
+        if (req.params.teacherId) {
+            query.teacher = teacherId;
+        } else if (req.user.role !== 'admin') {
             query.teacher = teacherId;
         }
         
@@ -324,6 +326,7 @@ export const getCoursesByTeacher = async (req, res, next) => {
         const courses = await Course.find(query)
             .populate('subject', 'name code credits department')
             .populate('semester', 'name year term isCurrent startDate endDate')
+            .populate('teacher', 'username email teacherProfile profileimage')
             .sort({ createdAt: -1 });
 
         const courseIds = courses.map(course => course._id);
