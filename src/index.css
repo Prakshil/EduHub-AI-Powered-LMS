@@ -101,3 +101,41 @@ html {
     animation: scroll var(--animation-duration, 40s) var(--animation-direction, forwards) linear infinite;
   }
 }
+
+/* Calendar styles (Dashboard) */
+.custom-calendar {
+  width: 100%;
+  border: none !important;
+  background: transparent !important;
+}
+.custom-calendar .react-calendar__tile {
+  color: #374151;
+  background: transparent;
+  border-radius: 8px;
+  padding: 10px;
+}
+.custom-calendar .react-calendar__tile:hover {
+  background: rgba(99, 102, 241, 0.1);
+  color: #1f2937;
+}
+.custom-calendar .react-calendar__tile--active {
+  background: linear-gradient(to right, rgb(99, 102, 241), rgb(168, 85, 247));
+  color: #ffffff;
+}
+.custom-calendar .react-calendar__tile--now {
+  background: rgba(99, 102, 241, 0.15);
+  color: #1f2937;
+}
+.custom-calendar .react-calendar__month-view__weekdays {
+  color: #6b7280;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+}
+.custom-calendar .react-calendar__navigation button {
+  color: #374151;
+  background: transparent;
+  font-size: 1rem;
+}
+.custom-calendar .react-calendar__navigation button:hover {
+  background: rgba(99, 102, 241, 0.1);
+}

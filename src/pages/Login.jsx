@@ -46,7 +46,7 @@ const Login = () => {
 
     try {
       const response = await authAPI.login(formData);
-      
+
       if (response.success && response.data) {
         login(response.data.user, response.data.token);
         toast.success('Login successful!');
@@ -74,14 +74,14 @@ const Login = () => {
   return (
     <div className="min-h-screen w-full bg-white relative overflow-hidden flex items-center justify-center">
       {/* Grid Background */}
-      <div 
-        className="fixed inset-0 z-0" 
+      <div
+        className="fixed inset-0 z-0"
         style={{
           backgroundImage: 'linear-gradient(to right, #e5e7eb 1px, transparent 1px), linear-gradient(to bottom, #e5e7eb 1px, transparent 1px)',
           backgroundSize: '40px 40px'
         }}
       />
-      
+
       {/* Gradient blobs */}
       <div className="absolute top-20 left-20 w-72 h-72 bg-indigo-200 rounded-full mix-blend-multiply filter blur-3xl opacity-40 animate-pulse"></div>
       <div className="absolute bottom-20 right-20 w-72 h-72 bg-purple-200 rounded-full mix-blend-multiply filter blur-3xl opacity-40 animate-pulse"></div>
@@ -176,6 +176,15 @@ const Login = () => {
               >
                 Sign up
               </Link>
+            </div>
+            <div className="text-gray-400 text-sm">
+              <button
+                type="button"
+                onClick={() => toast('Please contact your administrator to reset your password.', { icon: 'ℹ️' })}
+                className="text-indigo-500 hover:text-indigo-600 font-medium transition-colors cursor-pointer"
+              >
+                Forgot your password?
+              </button>
             </div>
           </div>
         </div>

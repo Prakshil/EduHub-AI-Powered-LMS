@@ -25,6 +25,22 @@ api.interceptors.request.use(
   }
 );
 
+// Auto-logout on 401 (expired/invalid token)
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      const isAuthRoute = error.config?.url?.includes('/auth/');
+      if (!isAuthRoute) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        window.location.href = '/login';
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
 // Auth APIs
 export const authAPI = {
   signup: async (userData) => {
@@ -38,7 +54,7 @@ export const authAPI = {
         formData.append(key, userData[key]);
       }
     });
-    
+
     const response = await axios.post(`${API_BASE_URL}/auth/register`, formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
       withCredentials: true,
@@ -91,7 +107,7 @@ export const userAPI = {
     });
 
     const response = await axios.put(`${API_BASE_URL}/update/user/${id}`, formData, {
-      headers: { 
+      headers: {
         'Content-Type': 'multipart/form-data',
         'Authorization': `Bearer ${localStorage.getItem('token')}`
       },
@@ -165,27 +181,27 @@ export const subjectAPI = {
     const response = await api.get('/subjects', { params });
     return response.data;
   },
-  
+
   getById: async (id) => {
     const response = await api.get(`/subjects/${id}`);
     return response.data;
   },
-  
+
   create: async (data) => {
     const response = await api.post('/subjects', data);
     return response.data;
   },
-  
+
   update: async (id, data) => {
     const response = await api.put(`/subjects/${id}`, data);
     return response.data;
   },
-  
+
   delete: async (id) => {
     const response = await api.delete(`/subjects/${id}`);
     return response.data;
   },
-  
+
   getDepartments: async () => {
     const response = await api.get('/subjects/departments');
     return response.data;
@@ -198,32 +214,32 @@ export const semesterAPI = {
     const response = await api.get('/semesters', { params });
     return response.data;
   },
-  
+
   getCurrent: async () => {
     const response = await api.get('/semesters/current');
     return response.data;
   },
-  
+
   getById: async (id) => {
     const response = await api.get(`/semesters/${id}`);
     return response.data;
   },
-  
+
   create: async (data) => {
     const response = await api.post('/semesters', data);
     return response.data;
   },
-  
+
   update: async (id, data) => {
     const response = await api.put(`/semesters/${id}`, data);
     return response.data;
   },
-  
+
   delete: async (id) => {
     const response = await api.delete(`/semesters/${id}`);
     return response.data;
   },
-  
+
   setCurrent: async (id) => {
     const response = await api.patch(`/semesters/${id}/set-current`);
     return response.data;
@@ -232,60 +248,60 @@ export const semesterAPI = {
 
 // Course APIs
 export const courseAPI = {
-    getUnassigned: async () => {
-      const response = await api.get('/courses/unassigned');
-      return response.data;
-    },
+  getUnassigned: async () => {
+    const response = await api.get('/courses/unassigned');
+    return response.data;
+  },
   getAll: async (params = {}) => {
     const response = await api.get('/courses', { params });
     return response.data;
   },
-  
+
   getAvailable: async (params = {}) => {
     const response = await api.get('/courses/available', { params });
     return response.data;
   },
-  
+
   getMyCourses: async () => {
     const response = await api.get('/courses/my-courses');
     return response.data;
   },
-  
+
   getByTeacher: async (teacherId) => {
     const response = await api.get(`/courses/teacher/${teacherId}`);
     return response.data;
   },
-  
+
   getById: async (id) => {
     const response = await api.get(`/courses/${id}`);
     return response.data;
   },
-  
+
   getStudents: async (id) => {
     const response = await api.get(`/courses/${id}/students`);
     return response.data;
   },
-  
+
   assignTeacher: async (courseId, teacherId) => {
     const response = await api.patch(`/courses/${courseId}/assign-teacher`, { teacherId });
     return response.data;
   },
-  
+
   removeTeacher: async (courseId) => {
     const response = await api.patch(`/courses/${courseId}/remove-teacher`);
     return response.data;
   },
-  
+
   create: async (data) => {
     const response = await api.post('/courses', data);
     return response.data;
   },
-  
+
   update: async (id, data) => {
     const response = await api.put(`/courses/${id}`, data);
     return response.data;
   },
-  
+
   delete: async (id) => {
     const response = await api.delete(`/courses/${id}`);
     return response.data;
@@ -298,42 +314,42 @@ export const enrollmentAPI = {
     const response = await api.post('/enrollments/enroll', { courseId });
     return response.data;
   },
-  
+
   drop: async (enrollmentId, reason) => {
     const response = await api.patch(`/enrollments/${enrollmentId}/drop`, { reason });
     return response.data;
   },
-  
+
   getMyEnrollments: async (params = {}) => {
     const response = await api.get('/enrollments/my-enrollments', { params });
     return response.data;
   },
-  
+
   getById: async (id) => {
     const response = await api.get(`/enrollments/${id}`);
     return response.data;
   },
-  
+
   getCourseEnrollments: async (courseId) => {
     const response = await api.get(`/enrollments/course/${courseId}`);
     return response.data;
   },
-  
+
   getStudentEnrollments: async (studentId, params = {}) => {
     const response = await api.get(`/enrollments/student/${studentId}`, { params });
     return response.data;
   },
-  
+
   updateProgress: async (enrollmentId, data) => {
     const response = await api.patch(`/enrollments/${enrollmentId}/progress`, data);
     return response.data;
   },
-  
+
   updateScores: async (enrollmentId, data) => {
     const response = await api.patch(`/enrollments/${enrollmentId}/scores`, data);
     return response.data;
   },
-  
+
   adminEnroll: async (studentId, courseId) => {
     const response = await api.post('/enrollments/admin-enroll', { studentId, courseId });
     return response.data;
@@ -346,12 +362,12 @@ export const gradeAPI = {
     const response = await api.get('/grades/my-grades', { params });
     return response.data;
   },
-  
+
   getById: async (id) => {
     const response = await api.get(`/grades/${id}`);
     return response.data;
   },
-  
+
   create: async (data) => {
     const response = await api.post('/grades', data);
     return response.data;
@@ -366,33 +382,33 @@ export const gradeAPI = {
     const response = await api.get('/grades/analytics/admin/overview');
     return response.data;
   },
-  
+
   getCourseGrades: async (courseId) => {
     const response = await api.get(`/grades/course/${courseId}`);
     return response.data;
   },
-  
+
   assignGrade: async (enrollmentId, remarks) => {
     const response = await api.post(`/grades/assign/${enrollmentId}`, { remarks });
     return response.data;
   },
-  
+
   finalizeGrade: async (gradeId) => {
     const response = await api.patch(`/grades/finalize/${gradeId}`);
     return response.data;
   },
-  
+
   bulkFinalize: async (courseId) => {
     const response = await api.post(`/grades/bulk-finalize/${courseId}`);
     return response.data;
   },
-  
+
   getTranscript: async (studentId = null) => {
     const url = studentId ? `/grades/transcript/${studentId}` : '/grades/transcript';
     const response = await api.get(url, { responseType: 'blob' });
     return response.data;
   },
-  
+
   getAnalytics: async (studentId = null) => {
     const url = studentId ? `/grades/analytics/${studentId}` : '/grades/analytics';
     const response = await api.get(url);
@@ -406,42 +422,42 @@ export const announcementAPI = {
     const response = await api.get('/announcements', { params });
     return response.data;
   },
-  
+
   getCategories: async () => {
     const response = await api.get('/announcements/categories');
     return response.data;
   },
-  
+
   getUnreadCount: async () => {
     const response = await api.get('/announcements/unread-count');
     return response.data;
   },
-  
+
   getMyAnnouncements: async () => {
     const response = await api.get('/announcements/my-announcements');
     return response.data;
   },
-  
+
   getById: async (id) => {
     const response = await api.get(`/announcements/${id}`);
     return response.data;
   },
-  
+
   create: async (data) => {
     const response = await api.post('/announcements', data);
     return response.data;
   },
-  
+
   update: async (id, data) => {
     const response = await api.put(`/announcements/${id}`, data);
     return response.data;
   },
-  
+
   delete: async (id) => {
     const response = await api.delete(`/announcements/${id}`);
     return response.data;
   },
-  
+
   togglePin: async (id) => {
     const response = await api.patch(`/announcements/${id}/toggle-pin`);
     return response.data;
@@ -452,7 +468,7 @@ export const announcementAPI = {
 export const assignmentAPI = {
   create: async (formData) => {
     const response = await axios.post(`${API_BASE_URL}/assignments`, formData, {
-      headers: { 
+      headers: {
         'Content-Type': 'multipart/form-data',
         'Authorization': `Bearer ${localStorage.getItem('token')}`
       },
@@ -478,7 +494,7 @@ export const assignmentAPI = {
 
   update: async (id, formData) => {
     const response = await axios.put(`${API_BASE_URL}/assignments/${id}`, formData, {
-      headers: { 
+      headers: {
         'Content-Type': 'multipart/form-data',
         'Authorization': `Bearer ${localStorage.getItem('token')}`
       },

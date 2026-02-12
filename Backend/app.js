@@ -27,20 +27,20 @@ app.use(cors({
     origin: function (origin, callback) {
         // Allow requests with no origin (like mobile apps or curl requests)
         if (!origin) return callback(null, true);
-        
+
         const allowedOrigins = [
             'http://localhost:5173',
             'http://localhost:3000',
         ];
-        
+
         // Allow all Vercel deployment URLs (production and previews)
-        const isVercelDomain = origin.includes('student-management-system-mern') && 
-                               origin.includes('.vercel.app');
-        
+        const isVercelDomain = origin.includes('student-management-system-mern') &&
+            origin.includes('.vercel.app');
+
         if (allowedOrigins.indexOf(origin) !== -1 || isVercelDomain) {
             callback(null, true);
         } else {
-            callback(null, true); // Temporarily allow all for debugging
+            callback(new Error('Not allowed by CORS'));
         }
     },
     credentials: true,
@@ -110,5 +110,5 @@ ConnectDB()
         console.error("❌ Database connection failed:", error);
         console.error("⚠️  Server will not start without database connection.");
         console.error("💡 Please check your MONGODB_URL and DB_NAME in .env file");
-        process.exit(1); 
+        process.exit(1);
     });

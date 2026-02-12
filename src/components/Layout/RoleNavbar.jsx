@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
+import SearchDialog from "@/components/SearchDialog";
 import {
   Home,
   LayoutDashboard,
@@ -18,6 +19,7 @@ import {
   Calendar,
   FileText,
   User,
+  Search,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -27,6 +29,7 @@ const RoleNavbar = () => {
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -53,7 +56,6 @@ const RoleNavbar = () => {
   const handleLogout = async () => {
     try {
       await logout();
-      navigate('/login');
     } catch (error) {
       console.error('Logout error:', error);
     }
@@ -188,11 +190,10 @@ const RoleNavbar = () => {
         initial={{ y: -100 }}
         animate={{ y: 0 }}
         transition={{ duration: 0.4, ease: "easeOut" }}
-        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-          scrolled
-            ? "bg-white/95 backdrop-blur-md shadow-sm border-b border-gray-200"
-            : "bg-white/80 backdrop-blur-sm"
-        }`}
+        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled
+          ? "bg-white/95 backdrop-blur-md shadow-sm border-b border-gray-200"
+          : "bg-white/80 backdrop-blur-sm"
+          }`}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
@@ -228,11 +229,10 @@ const RoleNavbar = () => {
                   <Link
                     key={item.name}
                     to={item.to}
-                    className={`relative flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                      isActive(item.to)
-                        ? "text-indigo-600 bg-indigo-50"
-                        : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
-                    }`}
+                    className={`relative flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${isActive(item.to)
+                      ? "text-indigo-600 bg-indigo-50"
+                      : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+                      }`}
                   >
                     <item.icon className="h-4 w-4" />
                     {item.name}
@@ -247,7 +247,18 @@ const RoleNavbar = () => {
             </div>
 
             {/* Right Side */}
-            <div className="hidden md:flex items-center space-x-4">
+            <div className="hidden md:flex items-center space-x-3">
+              {/* Search Button */}
+              <button
+                onClick={() => setSearchOpen(true)}
+                className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-gray-200 text-gray-500 hover:text-gray-700 hover:bg-gray-50 transition-colors text-sm"
+              >
+                <Search className="h-4 w-4" />
+                <span className="hidden lg:inline">Search...</span>
+                <kbd className="hidden lg:inline-flex items-center gap-0.5 rounded border border-gray-200 bg-gray-50 px-1.5 py-0.5 text-xs text-gray-400">
+                  ⌘K
+                </kbd>
+              </button>
               {user && (
                 <Button
                   variant="outline"
@@ -380,24 +391,37 @@ const RoleNavbar = () => {
                 )}
 
                 {navLinks.map((item) => (
-                  <Link
-                    key={item.name}
-                    to={item.to}
-                    onClick={() => setMobileMenuOpen(false)}
-                    className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
-                      isActive(item.to)
+                  item.action ? (
+                    <button
+                      key={item.name}
+                      onClick={() => {
+                        item.action();
+                        setMobileMenuOpen(false);
+                      }}
+                      className="flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-gray-600 hover:bg-gray-100 w-full"
+                    >
+                      <item.icon className="h-5 w-5" />
+                      {item.name}
+                    </button>
+                  ) : (
+                    <Link
+                      key={item.name}
+                      to={item.to}
+                      onClick={() => setMobileMenuOpen(false)}
+                      className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${isActive(item.to)
                         ? "bg-indigo-50 text-indigo-600"
                         : "text-gray-600 hover:bg-gray-100"
-                    }`}
-                  >
-                    <item.icon className="h-5 w-5" />
-                    {item.name}
-                    {item.badge > 0 && (
-                      <span className="ml-auto bg-red-500 text-white text-xs px-2 py-1 rounded-full">
-                        {item.badge}
-                      </span>
-                    )}
-                  </Link>
+                        }`}
+                    >
+                      <item.icon className="h-5 w-5" />
+                      {item.name}
+                      {item.badge > 0 && (
+                        <span className="ml-auto bg-red-500 text-white text-xs px-2 py-1 rounded-full">
+                          {item.badge}
+                        </span>
+                      )}
+                    </Link>
+                  )
                 ))}
 
                 <div className="pt-4 border-t border-gray-200 space-y-2">
@@ -458,6 +482,7 @@ const RoleNavbar = () => {
           )}
         </AnimatePresence>
       </motion.nav>
+      <SearchDialog open={searchOpen} onOpenChange={setSearchOpen} />
     </>
   );
 };

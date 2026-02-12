@@ -1,4 +1,4 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import Groq from 'groq-sdk';
 import ApiError from '../utils/ApiError.js';
 import ApiResponse from '../utils/ApiResponse.js';
 import Course from '../Models/Course.model.js';
@@ -8,38 +8,20 @@ import Assignment from '../Models/Assignment.model.js';
 import ExamResult from '../Models/ExamResult.model.js';
 
 
-let genAI = null;
-const getGeminiClient = () => {
-    if (!genAI) {
-        const apiKey = process.env.GEMINI_API_KEY;
-        if (!apiKey) {
-            throw new ApiError(500, 'Gemini API key is not configured. Please set GEMINI_API_KEY in your environment variables.');
+
+
+let groqClient = null;
+const getGroqClient = () => {
+    if (!groqClient) {
+        const apiKey = process.env.GROQ_API_KEY;
+        if (apiKey) {
+            groqClient = new Groq({ apiKey });
         }
-        // Initialize with API key - SDK will handle API version internally
-        genAI = new GoogleGenerativeAI(apiKey);
     }
-    return genAI;
+    return groqClient;
 };
 
-/**
- * List available models (helper function for debugging)
- */
-const listAvailableModels = async () => {
-    try {
-        const client = getGeminiClient();
-        // Note: The SDK doesn't directly expose listModels, but we can try common model names
-        const commonModels = [
-            'gemini-pro',
-            'gemini-1.5-pro',
-            'gemini-1.5-flash',
-            'gemini-2.0-flash-exp'
-        ];
-        return commonModels;
-    } catch (error) {
-        console.error('Error listing models:', error);
-        return [];
-    }
-};
+
 
 /**
  * Generate exam questions using Google Gemini
@@ -59,8 +41,8 @@ const listAvailableModels = async () => {
 export const generateExam = async (req, res, next) => {
     try {
         // Handle field name variations from different frontend forms
-        const { 
-            subject, 
+        const {
+            subject,
             numberOfQuestions,
             numQuestions, // Alternative field name from Assignments form
             difficulty,
@@ -76,19 +58,19 @@ export const generateExam = async (req, res, next) => {
         let course = null;
         let courseDetails = '';
         let subjectName = subject; // Use provided subject or derive from course
-        
+
         if (courseId) {
             try {
                 course = await Course.findById(courseId)
                     .populate('subject')
                     .populate('semester');
-                
+
                 if (course) {
                     // Derive subject name from course if not provided
                     if (!subjectName && course.subject?.name) {
                         subjectName = course.subject.name;
                     }
-                    
+
                     courseDetails = `Course: ${course.subject?.name || 'N/A'} (${course.subject?.code || 'N/A'}). `;
                     if (course.subject?.description) {
                         courseDetails += `Course Description: ${course.subject.description}. `;
@@ -191,78 +173,46 @@ Question 2: [Question text]
 ...
 Continue this format for all ${numQuestionsParsed} questions.`;
 
-        // Call Gemini API
-        console.log('Starting Gemini API call...');
-        console.log('Request details:', {
-            subject: subjectName,
-            numQuestions: numQuestionsParsed,
-            courseId: courseId || 'none',
-            hasApiKey: !!process.env.GEMINI_API_KEY
-        });
-        
-        const geminiClient = getGeminiClient();
-        
+        // Call Groq API
+        console.log('Starting Groq API call...');
+        console.log('Request Body:', req.body); // Debug log
+
+        let generatedQuestions;
+        let successfulModel = null;
+
+        const groq = getGroqClient();
+        if (!groq) {
+            throw new ApiError(500, 'Groq API key is not configured. Please set GROQ_API_KEY in your environment variables.');
+        }
+
         try {
-          
-            // Try different models in order of preference
-            // Using correct model names: gemini-1.5-flash, gemini-1.5-pro, gemini-2.0-flash
-            // Can be overridden with GEMINI_MODEL env variable
-            const preferredModels = [
-                process.env.GEMINI_MODEL, // User override
-                'gemini-1.5-pro',         // High quality, stable
-                'gemini-1.5-flash',       // Faster, cheaper
-                'gemini-2.0-flash',       // Latest flash model
-                'gemini-pro'              // Fallback to older model
-            ].filter(Boolean);
-            
-            let geminiModel;
-            let result;
-            let response;
-            let generatedQuestions;
-            let lastError = null;
-            let successfulModel = null;
-            
-            // Try each model until one works
-            for (const tryModel of preferredModels) {
-                try {
-                    console.log(`Attempting to use model: ${tryModel}`);
-                    geminiModel = geminiClient.getGenerativeModel({ model: tryModel });
-                    result = await geminiModel.generateContent(prompt);
-                    response = await result.response;
-                    generatedQuestions = response.text();
-                    successfulModel = tryModel;
-                    console.log(`✅ Successfully used model: ${tryModel}`);
-                    break; // Success, exit loop
-                } catch (modelError) {
-                    console.warn(`❌ Model ${tryModel} failed:`, modelError.message);
-                    lastError = modelError;
-
-                    const msg = (modelError.message || '').toLowerCase();
-                    const status = modelError.status || modelError.code;
-
-                    // If it's clearly a quota/billing issue, stop trying
-                    if ((status === 429) || msg.includes('quota') || msg.includes('billing')) {
-                        console.warn('Stopping model attempts due to quota/billing error');
-                        break;
+            console.log('Attempting to use Groq (Llama 3)...');
+            const completion = await groq.chat.completions.create({
+                messages: [
+                    {
+                        role: "system",
+                        content: "You are an expert exam question generator. generate exactly the number of questions requested in the format specified."
+                    },
+                    {
+                        role: "user",
+                        content: prompt
                     }
-                    // Otherwise continue to next model
-                }
+                ],
+                model: "llama-3.3-70b-versatile",
+                temperature: 0.5,
+                max_tokens: 4096,
+            });
+
+            generatedQuestions = completion.choices[0]?.message?.content || "";
+            if (generatedQuestions) {
+                successfulModel = "llama-3.3-70b-versatile";
+                console.log(`✅ Successfully used Groq model: ${successfulModel}`);
+            } else {
+                throw new Error('Groq returned empty content');
             }
-            
-            // If all models failed, throw the last error
-            if (!generatedQuestions) {
-                throw lastError || new Error('All model attempts failed');
-            }
-            
-            console.log('Gemini API call successful');
-            
-            if (!generatedQuestions || generatedQuestions.trim().length === 0) {
-                console.error('No content in Gemini response:', response);
-                throw new ApiError(500, 'Failed to generate exam questions - no response from AI');
-            }
-            
-            console.log('Successfully generated exam questions');
-            
+
+            console.log('AI Generation successful');
+
             // Notify enrolled students about the exam if courseId is provided
             if (courseId && course) {
                 try {
@@ -279,7 +229,7 @@ Continue this format for all ${numQuestionsParsed} questions.`;
                     console.error('Error notifying students about exam:', notifyError);
                 }
             }
-            
+
             // Parse questions and save as assignment if saveAsAssignment is true
             let savedAssignment = null;
             if (req.body.saveAsAssignment === true && courseId && course) {
@@ -299,7 +249,7 @@ Continue this format for all ${numQuestionsParsed} questions.`;
                     // Continue even if saving fails
                 }
             }
-            
+
             // Return success response
             res.status(200).json(
                 new ApiResponse(200, {
@@ -318,15 +268,14 @@ Continue this format for all ${numQuestionsParsed} questions.`;
                 }, 'Exam questions generated successfully')
             );
             return;
-            
-        } catch (geminiError) {
-            console.error('Gemini API call failed:', {
-                message: geminiError.message,
-                status: geminiError.status,
-                code: geminiError.code,
-                response: geminiError.response
+
+        } catch (groqError) {
+            console.error('Groq API call failed:', {
+                message: groqError.message,
+                status: groqError.status,
+                code: groqError.code
             });
-            throw geminiError;
+            throw groqError;
         }
 
     } catch (error) {
@@ -336,63 +285,32 @@ Continue this format for all ${numQuestionsParsed} questions.`;
             return next(error);
         }
 
-        // Handle Gemini-specific errors
-        if (error.message) {
-            const errorMessage = error.message;
-            console.error('Gemini API Error Details:', {
-                message: errorMessage,
-                name: error.name
-            });
-            
-            // Provide user-friendly error messages
-            let userMessage = 'Failed to generate exam questions';
-            let httpStatus = 500;
-
-            const lower = errorMessage.toLowerCase();
-            
-            if (lower.includes('api key') || lower.includes('invalid api key')) {
-                userMessage = 'Gemini API key is invalid or missing. Please check your GEMINI_API_KEY in the backend environment.';
-                httpStatus = 401;
-            } else if (lower.includes('quota') || lower.includes('billing')) {
-                userMessage = 'Gemini API quota exceeded. Please check your Google Cloud billing and quota limits.';
-                httpStatus = 429;
-            } else if (lower.includes('safety') || lower.includes('blocked')) {
-                userMessage = 'Content was blocked by safety filters. Please try with different parameters.';
-                httpStatus = 400;
-            } else if (lower.includes('model') || lower.includes('not found')) {
-                // This is a configuration issue, not a missing HTTP route,
-                // so return 500 with a clear message instead of 404.
-                userMessage = 'Gemini model configuration error. Please verify GEMINI_MODEL (if set) and that your API key has access to the selected model.';
-                httpStatus = 500;
-            } else {
-                userMessage = `Gemini API error: ${errorMessage}`;
-            }
-            
-            return next(new ApiError(
-                httpStatus, 
-                userMessage,
-                [errorMessage]
-            ));
-        }
-
-        // Handle other errors (network, timeout, etc.)
-        console.error('Exam generation error (non-Gemini):', {
+        // Handle generic errors
+        console.error('Exam generation error:', {
             message: error.message,
             stack: error.stack,
             name: error.name
         });
-        
+
+        let userMessage = 'Failed to generate exam questions';
+        let httpStatus = 500;
+
+        if (error.message && (error.message.includes('API key') || error.status === 401)) {
+            userMessage = 'Groq API key is invalid or missing.';
+            httpStatus = 401;
+        } else if (error.status === 429) {
+            userMessage = 'Groq API rate limit exceeded.';
+            httpStatus = 429;
+        }
+
         return next(new ApiError(
-            500, 
-            `Failed to generate exam questions: ${error.message || 'Unknown error'}`,
+            httpStatus,
+            userMessage || `Failed to generate exam questions: ${error.message || 'Unknown error'}`,
             [error.message || 'Unknown error occurred']
         ));
     }
 };
 
-/**
- * Helper function to notify students about a generated exam
- */
 const notifyStudentsAboutExam = async ({ course, subjectName, examType, topic, numberOfQuestions, teacherId }) => {
     try {
         // Find all enrolled students in the course
@@ -439,33 +357,30 @@ const notifyStudentsAboutExam = async ({ course, subjectName, examType, topic, n
     }
 };
 
-/**
- * Parse AI-generated questions and save as Assignment
- */
 const parseAndSaveQuestions = (questionsText) => {
     const questions = [];
     const questionBlocks = questionsText.split(/Question\s+\d+:/i).filter(block => block.trim());
-    
+
     questionBlocks.forEach((block) => {
         const lines = block.trim().split('\n').filter(line => line.trim());
         if (lines.length < 5) return;
-        
+
         const questionText = lines[0].trim();
         const options = {};
         let correctAnswer = null;
-        
+
         lines.slice(1).forEach(line => {
             const optionMatch = line.match(/^([A-D])\)\s*(.+)$/i);
             if (optionMatch) {
                 options[optionMatch[1].toUpperCase()] = optionMatch[2].trim();
             }
-            
+
             const answerMatch = line.match(/Correct Answer:\s*([A-D])/i);
             if (answerMatch) {
                 correctAnswer = answerMatch[1].toUpperCase();
             }
         });
-        
+
         if (questionText && Object.keys(options).length === 4 && correctAnswer) {
             questions.push({
                 question: questionText,
@@ -475,7 +390,7 @@ const parseAndSaveQuestions = (questionsText) => {
             });
         }
     });
-    
+
     return questions;
 };
 
@@ -488,7 +403,7 @@ const saveExamAsAssignment = async ({ questions, course, subjectName, examType, 
         if (parsedQuestions.length === 0) {
             throw new Error('Could not parse questions from generated text');
         }
-        
+
         const assignment = await Assignment.create({
             title: `${examType ? examType.charAt(0).toUpperCase() + examType.slice(1) : 'Exam'} - ${subjectName}${topic && topic !== 'general' ? ` (${topic})` : ''}`,
             description: `AI-generated ${examType || 'exam'} for ${subjectName}. Contains ${parsedQuestions.length} multiple-choice questions.`,
@@ -502,7 +417,7 @@ const saveExamAsAssignment = async ({ questions, course, subjectName, examType, 
             isPublished: true,
             publishedAt: new Date(),
         });
-        
+
         console.log(`✅ Saved exam as assignment: ${assignment._id}`);
         return assignment;
     } catch (error) {
@@ -519,34 +434,34 @@ export const getExam = async (req, res, next) => {
     try {
         const { examId } = req.params;
         const studentId = req.user._id;
-        
+
         const exam = await Assignment.findById(examId)
             .populate('course', 'name subject')
             .populate('teacher', 'username email');
-        
+
         if (!exam) {
             throw new ApiError(404, 'Exam not found');
         }
-        
+
         const enrollment = await Enrollment.findOne({
             student: studentId,
             course: exam.course._id,
             status: 'enrolled',
         });
-        
+
         if (!enrollment) {
             throw new ApiError(403, 'You are not enrolled in this course');
         }
-        
+
         if (!exam.isPublished) {
             throw new ApiError(403, 'This exam is not yet published');
         }
-        
+
         const existingResult = await ExamResult.findOne({
             exam: examId,
             student: studentId,
         });
-        
+
         if (existingResult && existingResult.status === 'submitted') {
             return res.status(200).json(
                 new ApiResponse(200, {
@@ -563,14 +478,14 @@ export const getExam = async (req, res, next) => {
                 }, 'Exam retrieved (already submitted)')
             );
         }
-        
+
         const examData = exam.toObject();
         const questionsWithoutAnswers = examData.questions.map(q => ({
             question: q.question,
             options: q.options,
             points: q.points,
         }));
-        
+
         res.status(200).json(
             new ApiResponse(200, {
                 exam: {
@@ -595,38 +510,38 @@ export const submitExam = async (req, res, next) => {
         const { examId } = req.params;
         const { answers, timeSpent } = req.body;
         const studentId = req.user._id;
-        
+
         const exam = await Assignment.findById(examId)
             .populate('course', 'name subject');
-        
+
         if (!exam) {
             throw new ApiError(404, 'Exam not found');
         }
-        
+
         const enrollment = await Enrollment.findOne({
             student: studentId,
             course: exam.course._id,
             status: 'enrolled',
         });
-        
+
         if (!enrollment) {
             throw new ApiError(403, 'You are not enrolled in this course');
         }
-        
+
         let examResult = await ExamResult.findOne({
             exam: examId,
             student: studentId,
         });
-        
+
         if (examResult && examResult.status === 'submitted') {
             throw new ApiError(400, 'You have already submitted this exam');
         }
-        
+
         const gradedAnswers = exam.questions.map((question, index) => {
             const studentAnswer = answers[index]?.selectedAnswer || null;
             const isCorrect = studentAnswer === question.correctAnswer;
             const points = isCorrect ? (question.points || 1) : 0;
-            
+
             return {
                 questionIndex: index,
                 selectedAnswer: studentAnswer,
@@ -634,11 +549,11 @@ export const submitExam = async (req, res, next) => {
                 points,
             };
         });
-        
+
         const totalScore = gradedAnswers.reduce((sum, answer) => sum + answer.points, 0);
         const maxScore = exam.maxScore || exam.questions.reduce((sum, q) => sum + (q.points || 1), 0);
         const percentage = maxScore > 0 ? Math.round((totalScore / maxScore) * 100) : 0;
-        
+
         if (examResult) {
             examResult.answers = gradedAnswers;
             examResult.score = totalScore;
@@ -663,9 +578,9 @@ export const submitExam = async (req, res, next) => {
                 isAutoGraded: true,
             });
         }
-        
+
         await examResult.populate('student', 'username email');
-        
+
         res.status(200).json(
             new ApiResponse(200, {
                 result: examResult,
@@ -687,25 +602,25 @@ export const getExamResults = async (req, res, next) => {
     try {
         const { examId } = req.params;
         const teacherId = req.user._id;
-        
+
         const exam = await Assignment.findById(examId);
-        
+
         if (!exam) {
             throw new ApiError(404, 'Exam not found');
         }
-        
+
         if (exam.teacher.toString() !== teacherId.toString() && req.user.role !== 'admin') {
             throw new ApiError(403, 'You are not authorized to view these results');
         }
-        
+
         const results = await ExamResult.find({ exam: examId })
             .populate('student', 'username email profileimage studentProfile')
             .sort({ submittedAt: -1 });
-        
+
         const stats = {
             totalStudents: results.length,
             submitted: results.filter(r => r.status === 'submitted').length,
-            averageScore: results.length > 0 
+            averageScore: results.length > 0
                 ? Math.round(results.reduce((sum, r) => sum + r.score, 0) / results.length)
                 : 0,
             averagePercentage: results.length > 0
@@ -714,7 +629,7 @@ export const getExamResults = async (req, res, next) => {
             highestScore: results.length > 0 ? Math.max(...results.map(r => r.score)) : 0,
             lowestScore: results.length > 0 ? Math.min(...results.map(r => r.score)) : 0,
         };
-        
+
         res.status(200).json(
             new ApiResponse(200, {
                 exam: {
@@ -740,18 +655,18 @@ export const getMyExamResult = async (req, res, next) => {
     try {
         const { examId } = req.params;
         const studentId = req.user._id;
-        
+
         const result = await ExamResult.findOne({
             exam: examId,
             student: studentId,
         })
             .populate('exam', 'title type maxScore')
             .populate('course', 'name subject');
-        
+
         if (!result) {
             throw new ApiError(404, 'No result found for this exam');
         }
-        
+
         const exam = await Assignment.findById(examId);
         const resultWithAnswers = result.toObject();
         resultWithAnswers.examDetails = {
@@ -764,7 +679,7 @@ export const getMyExamResult = async (req, res, next) => {
                 points: result.answers[idx]?.points || 0,
             })),
         };
-        
+
         res.status(200).json(
             new ApiResponse(200, resultWithAnswers, 'Exam result retrieved successfully')
         );
